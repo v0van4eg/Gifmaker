@@ -33,8 +33,10 @@ def index():
 
 @app.route('/reorder_images', methods=['POST'])
 def reorder_images():
-    image_order = request.form.get('image_order[]', '').split(',')
+    #image_order = request.form.get('image_order[]', '').split(',')
+    image_order = request.form.getlist('image_order[]')
     session['images'] = image_order
+    print(f"Список файлов {image_order}")
     return 'OK'
 
 
@@ -48,14 +50,16 @@ def generate_gif():
     resize = request.form.get('resize')
 
     images = []
+    print(f"Список файлов {session.get('images', [])}")
     for image_name in session.get('images', []):
+        print(f'Имя файла {image_name}')
         try:
             image = imageio.imread(os.path.join(upload_folder, image_name))
             images.append(image)
         except OSError as e:
             print(f"Error reading file {image_name}: {e}")
             continue
-
+    #print(images)
     if not images:
         return 'No valid images uploaded', 400
 
