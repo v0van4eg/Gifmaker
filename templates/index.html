@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Uploader</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</head>
+<body>
+    <header>
+        <h1>Image Uploader</h1>
+    </header>
+    <main class="clearfix">
+        <section class="left-column">
+            <form id="upload-form" method="post" enctype="multipart/form-data">
+                <input type="file" name="files" multiple accept="image/*" required>
+                <input type="submit" value="Upload">
+            </form>
+            <div id="image-container">
+                {% for image in images %}
+                    <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/' + image) }}" alt="{{ image }}" id="{{ image }}">
+                {% endfor %}
+            </div>
+        </section>
+        <section class="right-column">
+            <form id="generate-form" method="post" action="{{ url_for('generate_gif') }}">
+                <label for="duration">Duration (ms):</label>
+                <input type="number" name="duration" id="duration" min="10" value="100">
+                <label for="loop">Loop:</label>
+                <input type="number" name="loop" id="loop" min="0" value="0">
+                <label for="resize">Resize (WxH):</label>
+                <input type="text" name="resize" id="resize" placeholder="e.g. 400x300">
+                <input type="submit" value="Generate GIF">
+            </form>
+            <a href="{{ url_for('new_session') }}" class="btn">New Session</a>
+            <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/animation.gif') }}?{{ time }}" alt="GIF" id="gif-image">
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Image Uploader</p>
+    </footer>
+</body>
+</html>
