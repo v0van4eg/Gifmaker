@@ -21,6 +21,8 @@ def index():
     os.makedirs(upload_folder, exist_ok=True)
 
     if request.method == 'POST':
+        # Сохраняем текущий порядок изображений перед загрузкой новых файлов
+        current_order = session.get('images', [])
         session.pop('images', None)
         files = request.files.getlist('files')
         for file in files:
@@ -28,8 +30,12 @@ def index():
                 file.save(os.path.join(upload_folder, file.filename))
                 session.setdefault('images', []).append(file.filename)
 
+        # Восстанавливаем порядок изображений после загрузки новых файлов
+        session['images'] = current_order + [f for f in session['images'] if f not in current_order]
+
     images = session.get('images', [])
     return render_template('index.html', images=images, gif_file=gif_file)
+
 
 @app.route('/reorder_images', methods=['POST'])
 def reorder_images():
@@ -50,7 +56,7 @@ def generate_gif():
     resize = request.form.get('resize')
 
     images = []
-    print(f"Список файлов {session.get('images', [])}")
+    print(f"Генерим гифку\nСписок файлов {session.get('images', [])}")
     for image_name in session.get('images', []):
         print(f'Имя файла {image_name}')
         try:
