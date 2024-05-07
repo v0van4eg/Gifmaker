@@ -33,9 +33,10 @@ def index():
 
 @app.route('/reorder_images', methods=['POST'])
 def reorder_images():
-    image_order = request.form.get('image_order').split(',')
+    image_order = request.form.get('image_order[]', '').split(',')
     session['images'] = image_order
     return 'OK'
+
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
