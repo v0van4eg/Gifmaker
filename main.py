@@ -51,7 +51,7 @@ def generate_gif():
     session_id = session['session_id']
     upload_folder = os.path.join(app.root_path, 'static', 'uploads', session_id)
     gif_file = os.path.join(upload_folder, 'animation.gif')
-    duration = int(request.form.get('duration', 100))
+    duration = int(request.form.get('duration', 200))
     loop = int(request.form.get('loop', 0))
     resize = request.form.get('resize')
 
@@ -120,6 +120,6 @@ def new_session():
         return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0',port=5000)
 
 

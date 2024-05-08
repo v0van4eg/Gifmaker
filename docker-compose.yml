@@ -1,0 +1,10 @@
+services:
+  gifmaker:
+    build: .
+    image: vovan4eg/gifmaker
+    restart: unless-stopped
+    container_name: gifmaker
+    volumes:
+      - ./uploads:/app/static/uploads
+    ports:
+      - 8050:5000
