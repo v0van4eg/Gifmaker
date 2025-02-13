@@ -56,6 +56,9 @@ def reorder_images():
     return 'OK'
 
 
+from PIL import Image, ImageOps
+
+
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
     session_id = session['session_id']
@@ -68,8 +71,13 @@ def generate_gif():
 
     for image_name in session.get('images', []):
         try:
-            image = imageio.imread(os.path.join(upload_folder, image_name))
-            images.append(image)
+            image_path = os.path.join(upload_folder, image_name)
+            img = Image.open(image_path)
+
+            # Исправление ориентации по метаданным EXIF
+            img = ImageOps.exif_transpose(img)
+
+            images.append(np.array(img))
         except Exception:
             continue
 

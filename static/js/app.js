@@ -1,13 +1,16 @@
 $(function () {
     const dropArea = document.getElementById('drop-area');
+
     // Предотвращаем стандартное поведение браузера при перетаскивании
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, preventDefaults, false);
     });
+
     function preventDefaults(e) {
         e.preventDefault();
         e.stopPropagation();
     }
+
     // Изменяем стиль области при перетаскивании
     ['dragenter', 'dragover'].forEach(eventName => {
         dropArea.addEventListener(eventName, highlight, false);
@@ -15,22 +18,28 @@ $(function () {
     ['dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, unhighlight, false);
     });
-    function highlight(e) {
+
+    function highlight() {
         dropArea.classList.add('highlight');
     }
-    function unhighlight(e) {
+
+    function unhighlight() {
         dropArea.classList.remove('highlight');
     }
+
     // Обработка перетаскивания файлов
     dropArea.addEventListener('drop', handleDrop, false);
+
     function handleDrop(e) {
         let dt = e.dataTransfer;
         let files = dt.files;
         handleFiles(files);
     }
+
     function handleFiles(files) {
         uploadFiles(files);
     }
+
     function uploadFiles(files) {
         let formData = new FormData();
         for (let i = 0; i < files.length; i++) {
@@ -50,6 +59,7 @@ $(function () {
             }
         });
     }
+
     function attachDraggableAndSortable() {
         $('#image-container').sortable({
             update: function () {
@@ -58,6 +68,7 @@ $(function () {
             }
         });
     }
+
     $('#upload-form input[type="file"]').on('change', function () {
         let formData = new FormData();
         $.each(this.files, function (_, file) {
@@ -77,17 +88,20 @@ $(function () {
             }
         });
     });
+
     $(document).on('click', '.remove-btn', function () {
         let imageName = $(this).data('image');
         $.post('/remove_image', {image_name: imageName}, function () {
             location.reload();
         });
     });
+
     $('#generate-form').on('submit', function (e) {
         e.preventDefault();
         let formData = new FormData(this);
         $('#progress-container').show();
         $('#progress-bar').width('0%').text('0%');
+
         $.ajax({
             url: $(this).attr('action'),
             type: 'POST',
@@ -100,8 +114,6 @@ $(function () {
                     if (evt.lengthComputable) {
                         let percentComplete = evt.loaded / evt.total * 100;
                         $('#progress-bar').width(percentComplete + '%').text(percentComplete.toFixed(2) + '%');
-                    } else {
-                        console.log('evt.lengthComputable is false');
                     }
                 }, false);
                 return xhr;
@@ -116,5 +128,14 @@ $(function () {
             }
         });
     });
+
+    $('#reverse-order-btn').on('click', function () {
+        let images = $('#image-container .image-wrapper').toArray().reverse();
+        $('#image-container').html(images);
+
+        let imageOrder = images.map(img => img.id);
+        $.post('/reorder_images', {image_order: imageOrder});
+    });
+
     attachDraggableAndSortable();
 });
