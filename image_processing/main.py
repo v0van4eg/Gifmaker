@@ -19,7 +19,7 @@ def reorder_images():
     data = request.get_json()
     session_id = data.get('session_id')
     image_order = data.get('image_order', [])
-    upload_folder = os.path.join(os.getenv('UPLOADS_ROOT', os.path.join(os.getcwd(), 'uploads')), session_id)
+    uploads_root = os.path.join(os.getcwd(), 'static', 'uploads')
     current_images = [f for f in os.listdir(upload_folder) if os.path.isfile(os.path.join(upload_folder, f))]
     ordered_images = []
     for image_name in image_order:

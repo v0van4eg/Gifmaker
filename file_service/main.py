@@ -6,7 +6,7 @@ import shutil
 app = Flask(__name__)
 
 # Очистка папки uploads при запуске
-uploads_root = os.path.join(os.getenv('UPLOADS_ROOT', os.path.join(os.getcwd(), 'static', 'uploads')))
+uploads_root = '/app/static/uploads'
 print('uploads_root')
 if os.path.exists(uploads_root):
     shutil.rmtree(uploads_root)

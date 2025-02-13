@@ -16,7 +16,7 @@ def generate_gif():
     loop = data.get('loop', 0)
     resize = data.get('resize')
     images = data.get('images', [])
-    uploads_root = os.path.join(os.getenv('UPLOADS_ROOT', os.path.join(os.getcwd(), 'static', 'uploads')))
+    uploads_root = '/app/static/uploads'
     processed_images = []
     print(f"Received resize parameter: {resize}")
     for image_name in images:
