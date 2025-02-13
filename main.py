@@ -65,7 +65,6 @@ def generate_gif():
     duration = int(request.form.get('duration', 100))
     loop = int(request.form.get('loop', 0))
     resize = request.form.get('resize')
-
     images = []
     print(f"Received resize parameter: {resize}")
 
@@ -73,10 +72,8 @@ def generate_gif():
         try:
             image_path = os.path.join(upload_folder, image_name)
             img = Image.open(image_path)
-
             # Исправление ориентации по метаданным EXIF
             img = ImageOps.exif_transpose(img)
-
             # Применение ресайза, если указаны размеры
             if resize:
                 print(f"Resizing image: {image_name}")
@@ -86,7 +83,6 @@ def generate_gif():
                     img = img.resize((width, height), Image.LANCZOS)
                 except ValueError:
                     return 'Invalid resize format', 400
-
             images.append(np.array(img))
         except Exception as e:
             print(f"Error processing image {image_name}: {e}")
@@ -96,27 +92,11 @@ def generate_gif():
         return 'No valid images uploaded', 400
 
     try:
-        with imageio.get_writer(gif_file, mode='I', duration=duration, loop=loop) as writer:
+        with imageio.get_writer(gif_file, mode='I', duration=duration / 1000.0, loop=loop) as writer:
             for img in images:
                 writer.append_data(img)
     except Exception as e:
         print(f"Error generating GIF: {e}")
-        return 'Error generating GIF', 500
-
-    return redirect(url_for('index'))
-
-    # if resize:
-    #     try:
-    #         width, height = map(int, resize.split('x'))
-    #         images = [np.resize(img, (height, width, img.shape[2])) for img in images]
-    #     except ValueError:
-    #         return 'Invalid resize format', 400
-
-    try:
-        with imageio.get_writer(gif_file, mode='I', duration=duration, loop=loop) as writer:
-            for img in images:
-                writer.append_data(img)
-    except Exception:
         return 'Error generating GIF', 500
 
     return redirect(url_for('index'))
