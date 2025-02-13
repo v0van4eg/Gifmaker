@@ -1,0 +1,4 @@
+Flask
+imageio
+numpy
+Pillow

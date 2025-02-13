@@ -1,10 +1,57 @@
+version: '3'
 services:
-  gifmaker:
-    build: .
-    image: vovan4eg/gifmaker
+  nginx:
+    image: nginx:latest
     restart: unless-stopped
-    container_name: gifmaker
-    volumes:
-      - ./uploads:/app/static/uploads
+    container_name: nginx
     ports:
-      - 8050:5000
+      - "8050:80"
+    volumes:
+      - ./nginx/api_gateway.conf:/etc/nginx/conf.d/default.conf
+      - ./static/uploads:/app/static/uploads
+    depends_on:
+      - web_ui
+      - upload
+      - image_processing
+      - gif_generator
+      - session_manager
+
+  web_ui:
+    build: ./web_ui
+    image: web_ui
+    restart: unless-stopped
+    container_name: web_ui
+    volumes:
+      - ./static/uploads:/app/static/uploads
+
+  upload:
+    build: ./upload
+    image: upload
+    restart: unless-stopped
+    container_name: upload
+    volumes:
+      - ./static/uploads:/app/static/uploads
+
+  image_processing:
+    build: ./image_processing
+    image: image_processing
+    restart: unless-stopped
+    container_name: image_processing
+    volumes:
+      - ./static/uploads:/app/static/uploads
+
+  gif_generator:
+    build: ./gif_generator
+    image: gif_generator
+    restart: unless-stopped
+    container_name: gif_generator
+    volumes:
+      - ./static/uploads:/app/static/uploads
+
+  session_manager:
+    build: ./session_manager
+    image: session_manager
+    restart: unless-stopped
+    container_name: session_manager
+    volumes:
+      - ./static/uploads:/app/static/uploads
