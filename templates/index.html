@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Генератор гифок</title>
+    <title>Генератор GIF</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
@@ -11,41 +11,46 @@
 </head>
 <body>
     <header>
-        <h1>Генератор гифок</h1>
+        <h1>Генератор GIF</h1>
     </header>
-    <main class="clearfix">
+    <main>
         <section class="left-column">
-            <a href="{{ url_for('new_session') }}" class="btn">New Session</a>
-            <form id="upload-form" method="post" enctype="multipart/form-data">
-                <input type="file" name="files" multiple accept="image/*" required>
-                <input type="submit" value="Upload">
+            <a href="{{ url_for('new_session') }}" class="btn">Новая сессия</a>
+            <form id="upload-form" enctype="multipart/form-data">
+                <div id="drop-area" class="drop-zone">
+                    <p>Перетащите файлы сюда или нажмите</p>
+                    <input type="file" name="files" multiple accept="image/*">
+                </div>
             </form>
             <div id="image-container">
                 {% for image in images %}
-                    <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/' + image) }}" alt="{{ image }}" id="{{ image }}">
+                    <div class="image-wrapper" id="{{ image }}">
+                        <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/' + image) }}" alt="{{ image }}">
+                        <button class="remove-btn" data-image="{{ image }}">✖</button>
+                    </div>
                 {% endfor %}
             </div>
         </section>
         <section class="right-column">
             <form id="generate-form" method="post" action="{{ url_for('generate_gif') }}">
-                <label for="duration">Длит.кадра (ms):</label>
+                <label for="duration">Длительность кадра (мс):</label>
                 <input type="number" name="duration" id="duration" min="10" value="100">
-                <label for="loop">Цикл:</label>
+                <label for="loop">Количество циклов:</label>
                 <input type="number" name="loop" id="loop" min="0" value="0">
-                <label for="resize">Resize (WxH):</label>
-                <input type="text" name="resize" id="resize" placeholder="e.g. 400x300">
-                <input type="submit" value="Generate GIF">
+                <label for="resize">Размер (ШxВ):</label>
+                <input type="text" name="resize" id="resize" placeholder="например 400x300">
+                <input type="submit" value="Создать GIF" class="btn">
             </form>
-
+            <div id="progress-container" style="display: none;">
+                <div id="progress-bar" style="width: 0%;"></div>
+            </div>
             {% if gif_file %}
                 <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/animation.gif') }}?{{ time }}" alt="GIF" id="gif-image">
             {% endif %}
         </section>
     </main>
     <footer>
-        <p>&copy; 2024 GIF генератор</p>
+        <p>&copy; 2025 GIF Генератор</p>
     </footer>
 </body>
 </html>
-
-
