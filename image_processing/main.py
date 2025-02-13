@@ -2,6 +2,8 @@ import os
 import requests
 from flask import Flask, request, jsonify
 
+uploads_root = os.path.join(os.getcwd(), 'static', 'uploads')
+
 app = Flask(__name__)
 
 @app.route('/remove_image', methods=['POST'])
@@ -19,8 +21,7 @@ def reorder_images():
     data = request.get_json()
     session_id = data.get('session_id')
     image_order = data.get('image_order', [])
-    uploads_root = os.path.join(os.getcwd(), 'static', 'uploads')
-    current_images = [f for f in os.listdir(upload_folder) if os.path.isfile(os.path.join(upload_folder, f))]
+    current_images = [f for f in os.listdir(uploads_root) if os.path.isfile(os.path.join(uploads_root, f))]
     ordered_images = []
     for image_name in image_order:
         if image_name in current_images:

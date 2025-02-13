@@ -6,6 +6,8 @@ from flask import Flask, request, jsonify
 import requests
 
 app = Flask(__name__)
+uploads_root = '/app/static/uploads'
+
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
@@ -16,7 +18,6 @@ def generate_gif():
     loop = data.get('loop', 0)
     resize = data.get('resize')
     images = data.get('images', [])
-    uploads_root = '/app/static/uploads'
     processed_images = []
     print(f"Received resize parameter: {resize}")
     for image_name in images:

@@ -9,10 +9,11 @@ app.secret_key = 'your_secret_key'
 
 # Очистка папки uploads при запуске
 uploads_root = os.path.join(os.getcwd(), 'static', 'uploads')
-print('uploads_root')
-if os.path.exists(uploads_root):
-    shutil.rmtree(uploads_root)
-os.makedirs(uploads_root, exist_ok=True)
+print(uploads_root)
+
+# if os.path.exists(uploads_root):
+#     shutil.rmtree(uploads_root)
+# os.makedirs(uploads_root, exist_ok=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
