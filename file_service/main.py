@@ -1,12 +1,13 @@
 import os
 import uuid
+import time
 from flask import Flask, request, jsonify, send_from_directory
 import shutil
 
 app = Flask(__name__)
 
 # Очистка папки uploads при запуске
-uploads_root = '/app/static/uploads'
+uploads_root = './static/uploads'
 print('uploads_root')
 
 @app.route('/upload', methods=['POST'])
@@ -15,12 +16,20 @@ def upload_file():
     file = request.files.get('file')
     print(file)
     if file:
-        session_id = str(uuid.uuid4())
+        # Получаем session_id из запроса или создаем новый, если его нет
+        session_id = request.form.get('session_id')
+        if not session_id:
+            session_id = str(uuid.uuid4())
         upload_folder = os.path.join(uploads_root, session_id)
         print(upload_folder)
         os.makedirs(upload_folder, exist_ok=True)
-        # Генерируем уникальное имя файла
-        unique_filename = f"img_{uuid.uuid4().hex}.jpg"
+        # Генерируем уникальное имя файла с использованием timestamp
+        timestamp = int(time.time() * 1000)  # Получаем текущий timestamp в миллисекундах
+        if '.' in file.filename:
+            file_extension = file.filename.rsplit('.', 1)[1].lower()  # Получаем расширение файла
+        else:
+            file_extension = 'jpg'  # Дефолтное расширение, если нет точки в имени файла
+        unique_filename = f"img_{timestamp}.{file_extension}"
         print(unique_filename)
         file_path = os.path.join(upload_folder, unique_filename)
         file.save(file_path)

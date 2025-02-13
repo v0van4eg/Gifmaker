@@ -19,7 +19,7 @@ def index():
     if request.method == 'POST':
         files = request.files.getlist('files')
         for file in files:
-            response = requests.post('http://upload:5002/upload', files={'file': file})
+            response = requests.post('http://localhost:5002/upload', files={'file': file})
             if response.status_code == 200:
                 session.setdefault('images', []).append(response.json().get('filename'))
     images = session.get('images', [])
@@ -30,7 +30,7 @@ def index():
 def upload():
     files = request.files.getlist('files')
     for file in files:
-        response = requests.post('http://upload:5002/upload', files={'file': file})
+        response = requests.post('http://localhost:5002/upload', files={'file': file})
         if response.status_code == 200:
             session_id = response.json().get('session_id')
             filename = response.json().get('filename')
@@ -42,7 +42,7 @@ def upload():
 def remove_image():
     image_name = request.form.get('image_name')
     session_id = session['session_id']
-    response = requests.delete(f'http://upload:5002/remove_file/{session_id}/{image_name}')
+    response = requests.delete(f'http://localhost:5002/remove_file/{session_id}/{image_name}')
     if response.status_code == 200:
         session['images'].remove(image_name)
         return jsonify(success=True)
@@ -67,7 +67,7 @@ def generate_gif():
     images = session.get('images', [])
 
     response = requests.post(
-        'http://gif_generator:5004/generate_gif',
+        'http://localhost:5004/generate_gif',
         json={
             'session_id': session_id,
             'gif_file': gif_file,

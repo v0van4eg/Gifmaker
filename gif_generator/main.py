@@ -22,7 +22,7 @@ def generate_gif():
     print(f"Received resize parameter: {resize}")
     for image_name in images:
         try:
-            response = requests.get(f'http://upload:5002/get_file/{session_id}/{image_name}')
+            response = requests.get(f'http://localhost:5002/get_file/{session_id}/{image_name}')
             if response.status_code == 200:
                 img = Image.open(response.raw)
                 # Исправление ориентации по метаданным EXIF

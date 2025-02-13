@@ -11,7 +11,7 @@ def remove_image():
     data = request.get_json()
     session_id = data.get('session_id')
     image_name = data.get('image_name')
-    response = requests.delete(f'http://upload:5002/remove_file/{session_id}/{image_name}')
+    response = requests.delete(f'http://localhost:5002/remove_file/{session_id}/{image_name}')
     if response.status_code == 200:
         return jsonify(success=True), 200
     return jsonify(success=False), 400
