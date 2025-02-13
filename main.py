@@ -4,6 +4,7 @@ import uuid
 import numpy as np
 import imageio.v2 as imageio
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
+from PIL import Image, ImageOps
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -56,9 +57,6 @@ def reorder_images():
     return 'OK'
 
 
-from PIL import Image, ImageOps
-
-
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
     session_id = session['session_id']
@@ -67,7 +65,9 @@ def generate_gif():
     duration = int(request.form.get('duration', 100))
     loop = int(request.form.get('loop', 0))
     resize = request.form.get('resize')
+
     images = []
+    print(f"Received resize parameter: {resize}")
 
     for image_name in session.get('images', []):
         try:
@@ -77,19 +77,40 @@ def generate_gif():
             # Исправление ориентации по метаданным EXIF
             img = ImageOps.exif_transpose(img)
 
+            # Применение ресайза, если указаны размеры
+            if resize:
+                print(f"Resizing image: {image_name}")
+                try:
+                    width, height = map(int, resize.split('x'))
+                    print(f"Resizing to {width}x{height}")
+                    img = img.resize((width, height), Image.LANCZOS)
+                except ValueError:
+                    return 'Invalid resize format', 400
+
             images.append(np.array(img))
-        except Exception:
+        except Exception as e:
+            print(f"Error processing image {image_name}: {e}")
             continue
 
     if not images:
         return 'No valid images uploaded', 400
 
-    if resize:
-        try:
-            width, height = map(int, resize.split('x'))
-            images = [np.resize(img, (height, width, img.shape[2])) for img in images]
-        except ValueError:
-            return 'Invalid resize format', 400
+    try:
+        with imageio.get_writer(gif_file, mode='I', duration=duration, loop=loop) as writer:
+            for img in images:
+                writer.append_data(img)
+    except Exception as e:
+        print(f"Error generating GIF: {e}")
+        return 'Error generating GIF', 500
+
+    return redirect(url_for('index'))
+
+    # if resize:
+    #     try:
+    #         width, height = map(int, resize.split('x'))
+    #         images = [np.resize(img, (height, width, img.shape[2])) for img in images]
+    #     except ValueError:
+    #         return 'Invalid resize format', 400
 
     try:
         with imageio.get_writer(gif_file, mode='I', duration=duration, loop=loop) as writer:
