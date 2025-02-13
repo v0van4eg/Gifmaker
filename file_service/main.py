@@ -8,9 +8,9 @@ app = Flask(__name__)
 # Очистка папки uploads при запуске
 uploads_root = '/app/static/uploads'
 print('uploads_root')
-if os.path.exists(uploads_root):
-    shutil.rmtree(uploads_root)
-os.makedirs(uploads_root, exist_ok=True)
+# if os.path.exists(uploads_root):
+#     shutil.rmtree(uploads_root)
+# os.makedirs(uploads_root, exist_ok=True)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
