@@ -8,13 +8,12 @@ services:
       - "8050:80"
     volumes:
       - ./nginx/api_gateway.conf:/etc/nginx/conf.d/default.conf
-      - ./static/uploads:/app/static/uploads
+      - ./uploads:/app/static/uploads
     depends_on:
       - web_ui
       - upload
       - image_processing
       - gif_generator
-      - session_manager
 
   web_ui:
     build: ./web_ui
@@ -22,15 +21,19 @@ services:
     restart: unless-stopped
     container_name: web_ui
     volumes:
-      - ./static/uploads:/app/static/uploads
+      - ./uploads:/app/static/uploads
+    environment:
+      - UPLOAD_SERVICE_URL=http://upload:5002
+      - IMAGE_PROCESSING_SERVICE_URL=http://image_processing:5003
+      - GIF_GENERATOR_SERVICE_URL=http://gif_generator:5004
 
   upload:
-    build: ./upload
+    build: ./file_service
     image: upload
     restart: unless-stopped
     container_name: upload
     volumes:
-      - ./static/uploads:/app/static/uploads
+      - ./uploads:/app/static/uploads
 
   image_processing:
     build: ./image_processing
@@ -38,7 +41,7 @@ services:
     restart: unless-stopped
     container_name: image_processing
     volumes:
-      - ./static/uploads:/app/static/uploads
+      - ./uploads:/app/static/uploads
 
   gif_generator:
     build: ./gif_generator
@@ -46,12 +49,4 @@ services:
     restart: unless-stopped
     container_name: gif_generator
     volumes:
-      - ./static/uploads:/app/static/uploads
-
-  session_manager:
-    build: ./session_manager
-    image: session_manager
-    restart: unless-stopped
-    container_name: session_manager
-    volumes:
-      - ./static/uploads:/app/static/uploads
+      - ./uploads:/app/static/uploads
