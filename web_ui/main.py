@@ -14,7 +14,7 @@ os.makedirs(uploads_root, exist_ok=True)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if 'session_id' not in session:
-        session['session_id'] = str(os.urandom(16).hex())
+        session['session_id'] = str(uuid.uuid4())
     session_id = session['session_id']
     if request.method == 'POST':
         files = request.files.getlist('files')
@@ -91,7 +91,7 @@ def new_session():
         if os.path.exists(upload_folder):
             shutil.rmtree(upload_folder)
     session.pop('images', None)
-    session['session_id'] = str(os.urandom(16).hex())
+    session['session_id'] = str(uuid.uuid4())
     return redirect(url_for('index'))
 
 def allowed_file(filename):

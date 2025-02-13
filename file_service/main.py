@@ -6,7 +6,8 @@ import shutil
 app = Flask(__name__)
 
 # Очистка папки uploads при запуске
-uploads_root = os.path.join(os.getenv('UPLOADS_ROOT', os.path.join(os.getcwd(), 'uploads')))
+uploads_root = os.path.join(os.getenv('UPLOADS_ROOT', os.path.join(os.getcwd(), 'static', 'uploads')))
+print('uploads_root')
 if os.path.exists(uploads_root):
     shutil.rmtree(uploads_root)
 os.makedirs(uploads_root, exist_ok=True)
@@ -18,9 +19,11 @@ def upload_file():
         session_id = str(uuid.uuid4())
         upload_folder = os.path.join(uploads_root, session_id)
         os.makedirs(upload_folder, exist_ok=True)
-        file_path = os.path.join(upload_folder, file.filename)
+        # Генерируем уникальное имя файла
+        unique_filename = f"img_{uuid.uuid4().hex}.jpg"
+        file_path = os.path.join(upload_folder, unique_filename)
         file.save(file_path)
-        return jsonify(session_id=session_id, filename=file.filename), 200
+        return jsonify(session_id=session_id, filename=unique_filename), 200
     return jsonify(error='No file provided'), 400
 
 @app.route('/get_file/<session_id>/<filename>', methods=['GET'])

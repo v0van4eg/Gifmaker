@@ -26,6 +26,7 @@ services:
       - UPLOAD_SERVICE_URL=http://upload:5002
       - IMAGE_PROCESSING_SERVICE_URL=http://image_processing:5003
       - GIF_GENERATOR_SERVICE_URL=http://gif_generator:5004
+      - UPLOADS_ROOT=/app
 
   upload:
     build: ./file_service
@@ -34,6 +35,8 @@ services:
     container_name: upload
     volumes:
       - ./uploads:/app/static/uploads
+    environment:
+      - UPLOADS_ROOT=/app
 
   image_processing:
     build: ./image_processing
@@ -42,6 +45,8 @@ services:
     container_name: image_processing
     volumes:
       - ./uploads:/app/static/uploads
+    environment:
+      - UPLOADS_ROOT=/app
 
   gif_generator:
     build: ./gif_generator
@@ -50,3 +55,6 @@ services:
     container_name: gif_generator
     volumes:
       - ./uploads:/app/static/uploads
+    environment:
+      - UPLOADS_ROOT=/app/static/uploads
+
