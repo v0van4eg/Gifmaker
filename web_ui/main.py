@@ -11,10 +11,6 @@ app.secret_key = 'your_secret_key'
 uploads_root = os.path.join(os.getcwd(), 'static', 'uploads')
 print(uploads_root)
 
-# if os.path.exists(uploads_root):
-#     shutil.rmtree(uploads_root)
-# os.makedirs(uploads_root, exist_ok=True)
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if 'session_id' not in session:

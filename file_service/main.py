@@ -8,19 +8,20 @@ app = Flask(__name__)
 # Очистка папки uploads при запуске
 uploads_root = '/app/static/uploads'
 print('uploads_root')
-# if os.path.exists(uploads_root):
-#     shutil.rmtree(uploads_root)
-# os.makedirs(uploads_root, exist_ok=True)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    print("Запускем upload_file")
     file = request.files.get('file')
+    print(file)
     if file:
         session_id = str(uuid.uuid4())
         upload_folder = os.path.join(uploads_root, session_id)
+        print(upload_folder)
         os.makedirs(upload_folder, exist_ok=True)
         # Генерируем уникальное имя файла
         unique_filename = f"img_{uuid.uuid4().hex}.jpg"
+        print(unique_filename)
         file_path = os.path.join(upload_folder, unique_filename)
         file.save(file_path)
         return jsonify(session_id=session_id, filename=unique_filename), 200
