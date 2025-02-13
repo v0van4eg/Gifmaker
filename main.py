@@ -4,7 +4,6 @@ import uuid
 import numpy as np
 import imageio.v2 as imageio
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
-import shutil
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -21,8 +20,9 @@ def index():
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
     session_id = session['session_id']
-    upload_folder = os.path.join(app.root_path, 'static', 'uploads', session_id)
+    upload_folder = os.path.join(uploads_root, session_id)
     os.makedirs(upload_folder, exist_ok=True)
+
     if request.method == 'POST':
         files = request.files.getlist('files')
         for file in files:
@@ -30,6 +30,7 @@ def index():
                 file_path = os.path.join(upload_folder, file.filename)
                 file.save(file_path)
                 session.setdefault('images', []).append(file.filename)
+
     images = session.get('images', [])
     gif_file = os.path.join(upload_folder, 'animation.gif')
     return render_template('index.html', images=images, gif_file=gif_file if os.path.exists(gif_file) else None)
@@ -39,7 +40,7 @@ def index():
 def remove_image():
     image_name = request.form.get('image_name')
     session_id = session['session_id']
-    upload_folder = os.path.join(app.root_path, 'static', 'uploads', session_id)
+    upload_folder = os.path.join(uploads_root, session_id)
     image_path = os.path.join(upload_folder, image_name)
     if os.path.exists(image_path):
         os.remove(image_path)
@@ -58,33 +59,37 @@ def reorder_images():
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
     session_id = session['session_id']
-    upload_folder = os.path.join(app.root_path, 'static', 'uploads', session_id)
+    upload_folder = os.path.join(uploads_root, session_id)
     gif_file = os.path.join(upload_folder, 'animation.gif')
     duration = int(request.form.get('duration', 100))
     loop = int(request.form.get('loop', 0))
     resize = request.form.get('resize')
     images = []
+
     for image_name in session.get('images', []):
         try:
             image = imageio.imread(os.path.join(upload_folder, image_name))
             images.append(image)
         except Exception:
             continue
+
     if not images:
         return 'No valid images uploaded', 400
+
     if resize:
         try:
             width, height = map(int, resize.split('x'))
             images = [np.resize(img, (height, width, img.shape[2])) for img in images]
         except ValueError:
             return 'Invalid resize format', 400
+
     try:
         with imageio.get_writer(gif_file, mode='I', duration=duration, loop=loop) as writer:
             for img in images:
                 writer.append_data(img)
-    except Exception as e:
-        print(f"Error generating GIF: {e}")
+    except Exception:
         return 'Error generating GIF', 500
+
     return redirect(url_for('index'))
 
 
@@ -92,7 +97,7 @@ def generate_gif():
 def new_session():
     session_id = session.get('session_id')
     if session_id:
-        upload_folder = os.path.join(app.root_path, 'static', 'uploads', session_id)
+        upload_folder = os.path.join(uploads_root, session_id)
         if os.path.exists(upload_folder):
             shutil.rmtree(upload_folder)
     session.pop('images', None)
