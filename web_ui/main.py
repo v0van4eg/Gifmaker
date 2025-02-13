@@ -1,12 +1,15 @@
 import os
 import requests
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+import shutil
+import uuid
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
 # Очистка папки uploads при запуске
-uploads_root = os.path.join(os.getenv('UPLOADS_ROOT', os.path.join(os.getcwd(), 'uploads')))
+uploads_root = os.path.join(os.getenv('UPLOADS_ROOT', os.path.join(os.getcwd(), 'static', 'uploads')))
+print('uploads_root')
 if os.path.exists(uploads_root):
     shutil.rmtree(uploads_root)
 os.makedirs(uploads_root, exist_ok=True)
