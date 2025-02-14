@@ -26,6 +26,10 @@ def upload():
     logger.info(f'Session ID через request form: {session_id}')
     session_id = session.get('session_id')
     logger.info(f'Session ID через session get: {session_id}')
+    logger.info("-----------")
+    logger.info("@@@ Мы внутри контейнера file_services")
+    session_id = request.form.get('session_id')  # Получаем session_id из запроса
+    logger.info(f'Session ID через request form: {session_id}')
 
     if not session_id:
         return jsonify(error='Session ID not found'), 400

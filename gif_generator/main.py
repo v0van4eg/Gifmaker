@@ -20,8 +20,6 @@ def generate_gif():
     logger.info(f"@@@ Мы внутриЗапускаем генератор GIF")
     session_id = request.form.get('session_id')
     logger.info(f'Session ID через request form: {session_id}')
-    session_id = session.get('session_id')
-    logger.info(f'Session ID через session get: {session_id}')
     if not session_id:
         return jsonify(error='Session ID not found'), 400
     logger.info(f'Session ID: {session_id}')
