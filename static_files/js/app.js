@@ -45,9 +45,10 @@ $(function () {
         for (let i = 0; i < files.length; i++) {
             formData.append('files', files[i]);
         }
-        // Добавляем session_id в форму
-        $.get('/get_session_id', function(session_id) {
-            formData.append('session_id', session_id);
+        // Получаем session_id и добавляем его в форму
+        $.get('/get_session_id', function(response) {
+            let session_id = response.session_id;  // Извлекаем session_id из ответа
+            formData.append('session_id', session_id);  // Добавляем session_id в FormData
             $.ajax({
                 url: '/upload',
                 type: 'POST',
@@ -104,41 +105,42 @@ $(function () {
         });
     });
 
-    $('#generate-form').on('submit', function (e) {
-        e.preventDefault();
-        let formData = new FormData(this);
-        $('#progress-container').show();
-        $('#progress-bar').width('0%').text('0%');
-        // Добавляем session_id в форму
-        $.get('/get_session_id', function(session_id) {
-            formData.append('session_id', session_id);
-            $.ajax({
-                url: '/generate_gif',
-                type: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-                xhr: function () {
-                    let xhr = new window.XMLHttpRequest();
-                    xhr.upload.addEventListener('progress', function (evt) {
-                        if (evt.lengthComputable) {
-                            let percentComplete = evt.loaded / evt.total * 100;
-                            $('#progress-bar').width(percentComplete + '%').text(percentComplete.toFixed(2) + '%');
-                        }
-                    }, false);
-                    return xhr;
-                },
-                success: function () {
-                    $('#progress-container').hide();
-                    location.reload();
-                },
-                error: function (xhr, status, error) {
-                    console.error('Ошибка генерации GIF:', error);
-                    $('#progress-container').hide();
-                }
-            });
+$('#generate-form').on('submit', function (e) {
+    e.preventDefault();
+    let formData = new FormData(this);
+    $('#progress-container').show();
+    $('#progress-bar').width('0%').text('0%');
+    // Получаем session_id и добавляем его в форму
+    $.get('/get_session_id', function(response) {
+        let session_id = response.session_id;  // Извлекаем session_id из ответа
+        formData.append('session_id', session_id);  // Добавляем session_id в FormData
+        $.ajax({
+            url: '/generate_gif',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            xhr: function () {
+                let xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function (evt) {
+                    if (evt.lengthComputable) {
+                        let percentComplete = evt.loaded / evt.total * 100;
+                        $('#progress-bar').width(percentComplete + '%').text(percentComplete.toFixed(2) + '%');
+                    }
+                }, false);
+                return xhr;
+            },
+            success: function () {
+                $('#progress-container').hide();
+                location.reload();
+            },
+            error: function (xhr, status, error) {
+                console.error('Ошибка генерации GIF:', error);
+                $('#progress-container').hide();
+            }
         });
     });
+});
 
     $('#reverse-order-btn').on('click', function () {
         let images = $('#image-container .image-wrapper').toArray().reverse();
