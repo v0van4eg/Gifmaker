@@ -56,6 +56,16 @@ def clean_uploads():
 clean_uploads()
 
 
+@app.route('/get_session_id', methods=['GET'])
+def get_session_id():
+    session_id = session.get('session_id')
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        session['session_id'] = session_id
+        logger.info(f'Создаём новую сессию session_id={session_id}')
+    return jsonify(session_id=session_id)
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     # clean_uploads()
@@ -120,7 +130,7 @@ def generate_gif():
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    logger.info(f"@@@ Вызываем загрузку. В обработчике Session ID in web_ui: {session_id}")
+    logger.info(f"@@@ Вызываем загрузку. В обработчике Session ID in web_ui: {session.get('session_id')}")
     session_id = session.get('session_id')
     logger.info(f"@@@ В обработчике Session ID in web_ui: {session_id}")
     files = request.files.getlist('files')
