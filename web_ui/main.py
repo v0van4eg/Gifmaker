@@ -1,18 +1,19 @@
 # web_ui/main.py
 
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import os
 import uuid
 from werkzeug.utils import secure_filename
 import requests
 import logging
+import shutil
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
-uploads_root = os.path.join(app.root_path, 'uploads')
 
 
 # Фильтр допустимых форматов
@@ -20,26 +21,42 @@ def allowed_file(filename):
     return filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'))
 
 
+uploads_root = os.path.join(app.root_path, 'uploads')
+
+
 def clean_uploads():
-    # Очистка файлов при старте (без удаления папок)
+    # Очистка файлов при старте (включая удаление папок)
     logger.info('Проверяем наличие папки uploads...')
     if os.path.exists(uploads_root):
         logger.info('Очищаем старые загрузки...')
-        for item in os.listdir(uploads_root):
-            item_path = os.path.join(uploads_root, item)
-            if os.path.isdir(item_path):
-                for file in os.listdir(item_path):
-                    os.remove(os.path.join(item_path, file))
-            else:
-                os.remove(item_path)
 
+        # Проверяем, является ли uploads_root символической ссылкой
+        if os.path.islink(uploads_root):
+            logger.info(f'{uploads_root} является символической ссылкой.')
+            # Получаем реальный путь, на который указывает ссылка
+            real_path = os.path.realpath(uploads_root)
+            logger.info(f'Реальный путь: {real_path}')
 
-clean_uploads()
+            # Очищаем содержимое реального каталога
+            for item in os.listdir(real_path):
+                item_path = os.path.join(real_path, item)
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)  # Рекурсивно удаляем директорию и её содержимое
+                else:
+                    os.remove(item_path)  # Удаляем файл
+        else:
+            # Если это не символическая ссылка, обрабатываем как обычный каталог
+            for item in os.listdir(uploads_root):
+                item_path = os.path.join(uploads_root, item)
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)  # Рекурсивно удаляем директорию и её содержимое
+                else:
+                    os.remove(item_path)  # Удаляем файл
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    clean_uploads()
+    # clean_uploads()
     logger.info('Переход на главную страницу...')
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
@@ -77,34 +94,37 @@ def new_session():
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
+    logger.info('@@@ Выбран маршрут Создание GIF...')
     session_id = session.get('session_id')
     if not session_id:
         return redirect(url_for('index'))
-
+    print(f"@@@ Сессия ID={session_id}")
     duration = request.form.get('duration', 100)
     loop = request.form.get('loop', 0)
     resize = request.form.get('resize')
 
-    generate_url = 'http://gif_generator:5004/generate_gif'
+    generate_url = 'http://cloudgif:5004/generate_gif'
     response = requests.post(generate_url, data={'duration': duration, 'loop': loop, 'resize': resize},
                              cookies=request.cookies)
 
     if response.status_code == 200:
         return redirect(url_for('index'))
     else:
+        logger.error(f'Ошибка при создании GIF: {response.text}')
         return jsonify(error='Failed to generate GIF'), 500
 
 
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'session_id' not in session:
+        logger.info('@@@ Session ID not found in web_ui')
         session['session_id'] = str(uuid.uuid4())
     session_id = session['session_id']
-    logger.info(f"Session ID in web_ui: {session_id}")
+    logger.info(f"@@@ Session ID in web_ui: {session_id}")
     files = request.files.getlist('files')
     if not files:
         return redirect(url_for('index'))
-    upload_url = 'http://file_service:5002/upload'
+    upload_url = 'http://cloudgif:5002/upload'
     data = {'session_id': session_id}
     files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
     # Убедитесь, что данные формы передаются вместе с файлами

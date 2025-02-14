@@ -1,6 +1,6 @@
 # gif_generator/main.py
 
-from flask import Flask, request, jsonify, redirect, url_for, session
+from flask import Flask, request, jsonify, redirect, url_for, session, json
 import os
 import numpy as np
 import imageio.v2 as imageio
@@ -17,11 +17,11 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
+    logger.info(f"Запускаем генератор GIF")
     session_id = session.get('session_id')
-    logger.info(f'Session ID: {session_id}')
     if not session_id:
         return jsonify(error='Session ID not found'), 400
-
+    logger.info(f'Session ID: {session_id}')
     upload_folder = os.path.join(uploads_root, session_id)
     gif_file = os.path.join(upload_folder, 'animation.gif')
     duration = int(request.form.get('duration', 100))

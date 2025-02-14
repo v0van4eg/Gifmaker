@@ -11,6 +11,7 @@ services:
       - ./uploads:/app/uploads
       - ./static_files:/app/static
       - ./templates:/app/templates
+
   web_ui:
     build: ./web_ui
     image: web_ui
@@ -21,9 +22,10 @@ services:
       - ./static_files:/app/static
       - ./templates:/app/templates
     environment:
-      SESSION_COOKIE_DOMAIN: localhost
+      SESSION_COOKIE_DOMAIN: cloudgif
     ports:
       - "5000:5000"
+
   file_service:
     build: ./file_service
     image: file_service
@@ -33,6 +35,7 @@ services:
       - ./uploads:/app/uploads
     ports:
       - "5002:5002"
+
   image_processing:
     build: ./image_processing
     image: image_processing
@@ -42,6 +45,7 @@ services:
       - ./uploads:/app/uploads
     ports:
       - "5003:5003"
+
   gif_generator:
     build: ./gif_generator
     image: gif_generator
