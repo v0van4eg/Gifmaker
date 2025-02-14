@@ -97,21 +97,20 @@ def new_session():
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
+    session_id = session.get('session_id')
     logger.info('@@@ Выбран маршрут Создание GIF...')
-    # session_id = session.get('session_id')
-    session_id = request.form.get('session_id')
-
     if not session_id:
         return redirect(url_for('index'))
-    print(f"@@@ Сессия ID={session_id}")
     duration = request.form.get('duration', 100)
     loop = request.form.get('loop', 0)
     resize = request.form.get('resize')
-
     generate_url = 'http://gif_generator:5004/generate_gif'
-    response = requests.post(generate_url, data={'duration': duration, 'loop': loop, 'resize': resize},
-                             cookies=request.cookies)
-
+    response = requests.post(generate_url, data={
+        'session_id': session_id,
+        'duration': duration,
+        'loop': loop,
+        'resize': resize
+    })
     if response.status_code == 200:
         return redirect(url_for('index'))
     else:
@@ -121,19 +120,19 @@ def generate_gif():
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    session_id = request.form.get('session_id')
+    session_id = session.get('session_id')
     logger.info(f"@@@ В обработчике Session ID in web_ui: {session_id}")
     files = request.files.getlist('files')
     if not files:
         return redirect(url_for('index'))
-    upload_url = 'http://cloudgif:5002/upload'
+    upload_url = 'http://file_service:5002/upload'
     data = {'session_id': session_id}
     files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
     response = requests.post(upload_url, data=data, files=files_data)
     if response.status_code == 200:
         response_data = response.json()
-        new_filenames = response_data.get('filenames', [])  # Получаем новые имена файлов
-        session.setdefault('images', []).extend(new_filenames)  # Сохраняем новые имена в сессии
+        new_filenames = response_data.get('filenames', [])
+        session.setdefault('images', []).extend(new_filenames)
     return redirect(url_for('index'))
 
 

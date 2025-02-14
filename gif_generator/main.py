@@ -19,7 +19,6 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 def generate_gif():
     logger.info(f"Запускаем генератор GIF")
     session_id = request.form.get('session_id')
-
     if not session_id:
         return jsonify(error='Session ID not found'), 400
     logger.info(f'Session ID: {session_id}')
@@ -29,9 +28,7 @@ def generate_gif():
     loop = int(request.form.get('loop', 0))
     resize = request.form.get('resize')
     images = []
-
-    # Используем имена файлов из сессии
-    for image_name in session.get('images', []):
+    for image_name in os.listdir(upload_folder):
         try:
             image_path = os.path.join(upload_folder, image_name)
             img = Image.open(image_path)
@@ -43,10 +40,8 @@ def generate_gif():
         except Exception as e:
             print(f"Error processing image {image_name}: {e}")
             continue
-
     if not images:
         return jsonify(error='No valid images uploaded'), 400
-
     try:
         with imageio.get_writer(gif_file, mode='I', duration=duration / 1000.0, loop=loop) as writer:
             for img in images:
@@ -54,8 +49,7 @@ def generate_gif():
     except Exception as e:
         print(f"Error generating GIF: {e}")
         return jsonify(error='Error generating GIF'), 500
-
-    return jsonify(success=True, gif_url=url_for('static', filename=os.path.join(session_id, 'animation.gif')))
+    return jsonify(success=True, gif_url=f'/static/uploads/{session_id}/animation.gif')
 
 
 if __name__ == '__main__':

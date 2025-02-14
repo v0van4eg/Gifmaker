@@ -30,8 +30,7 @@ def upload():
     files = request.files.getlist('files')
     if not files:
         return jsonify(error='No selected files'), 400
-
-    new_filenames = []  # Список для хранения новых имен файлов
+    new_filenames = []
     for file in files:
         if file and allowed_file(file.filename):
             unix_time = int(time.time())
@@ -43,10 +42,9 @@ def upload():
             try:
                 file.save(file_path)
                 logger.info(f"Saved file {filename} to {file_path}")
-                new_filenames.append(filename)  # Добавляем новое имя файла в список
+                new_filenames.append(filename)
             except Exception as e:
                 return jsonify(error=f'Failed to save file: {str(e)}'), 500
-
     return jsonify(success=True, filenames=new_filenames)
 
 
