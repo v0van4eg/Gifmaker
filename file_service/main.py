@@ -21,7 +21,7 @@ def allowed_file(filename):
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    logge.info{"@@@ Мы внутри контейнера file_services"}
+    logge.info("@@@ Мы внутри контейнера file_services")
     session_id = request.form.get('session_id')
     logger.info(f'Session ID через request form: {session_id}')
     session_id = session.get('session_id')
