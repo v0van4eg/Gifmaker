@@ -10,49 +10,50 @@
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </head>
 <body>
-    <header>
-        <h1>Генератор GIF</h1>
-    </header>
-    <main>
-        <section class="left-column">
-            <a href="{{ url_for('new_session') }}" class="btn">Новая сессия</a>
-            <button id="reverse-order-btn" type="button" class="btn">Изменить порядок сортировки</button>
-            <form id="upload-form" enctype="multipart/form-data">
-                <div id="drop-area" class="drop-zone">
-                    <p>Перетащите файлы сюда или нажмите</p>
-                    <input type="file" name="files" multiple accept="image/*">
-                </div>
-            </form>
-            <div id="image-container">
-                {% for image in images %}
-                    <div class="image-wrapper" id="{{ image }}">
-                        <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/' + image) }}" alt="{{ image }}">
-                        <button class="remove-btn" data-image="{{ image }}">✖</button>
-                    </div>
-                {% endfor %}
+<header>
+    <h1>Генератор GIF</h1>
+</header>
+<main>
+    <section class="left-column">
+        <a href="{{ url_for('new_session') }}" class="btn">Новая сессия</a>
+        <button id="reverse-order-btn" type="button" class="btn">Изменить порядок сортировки</button>
+        <form id="upload-form" enctype="multipart/form-data">
+            <div id="drop-area" class="drop-zone">
+                <p>Перетащите файлы сюда или нажмите</p>
+                <input type="file" name="files" multiple accept="image/*">
             </div>
-        </section>
-        <section class="right-column">
-            <form id="generate-form" method="post" action="{{ url_for('generate_gif') }}">
-                <label for="duration">Длительность кадра (мс):</label>
-                <input type="number" name="duration" id="duration" min="10" value="100">
-                <label for="loop">Количество циклов:</label>
-                <input type="number" name="loop" id="loop" min="0" value="0">
-                <label for="resize">Размер (ШxВ):</label>
-                <input type="text" name="resize" id="resize" placeholder="например 400x300">
-                <input type="submit" value="Создать GIF" class="btn">
-            </form>
-            <div id="progress-container" style="display: none;">
-                <div id="progress-bar" style="width: 0%;"></div>
+        </form>
+        <div id="image-container">
+            {% for image in images %}
+            <div class="image-wrapper" id="{{ image }}">
+                <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/' + image) }}"
+                     alt="{{ image }}">
+                <button class="remove-btn" data-image="{{ image }}">✖</button>
             </div>
-            {% if gif_file %}
-                <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/animation.gif') }}?{{ time }}" alt="GIF" id="gif-image">
-            {% endif %}
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2025 GIF Генератор</p>
-    </footer>
+            {% endfor %}
+        </div>
+    </section>
+    <section class="right-column">
+        <form id="generate-form" method="post" action="{{ url_for('generate_gif') }}">
+            <label for="duration">Длительность кадра (мс):</label>
+            <input type="number" name="duration" id="duration" min="10" value="100">
+            <label for="loop">Количество циклов:</label>
+            <input type="number" name="loop" id="loop" min="0" value="0">
+            <label for="resize">Размер (ШxВ):</label>
+            <input type="text" name="resize" id="resize" placeholder="например 400x300">
+            <input type="submit" value="Создать GIF" class="btn">
+        </form>
+        <div id="progress-container" style="display: none;">
+            <div id="progress-bar" style="width: 0%;"></div>
+        </div>
+        {% if gif_file %}
+            <img src="{{ url_for('get_uploaded_file', filename=session['session_id'] + '/' + image) }}" alt="{{ image }}">
+        {% endif %}
+    </section>
+</main>
+<footer>
+    <p>&copy; 2025 GIF Генератор</p>
+</footer>
 </body>
 </html>
 

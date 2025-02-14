@@ -1,6 +1,7 @@
 # web_ui/main.py
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import send_from_directory
 import os
 import uuid
 from werkzeug.utils import secure_filename
@@ -115,6 +116,12 @@ def new_session():
     logger.info(f'Создан новый session_id={new_session_id}')
 
     return redirect(url_for('index'))
+
+
+
+@app.route('/uploads/<path:filename>')
+def get_uploaded_file(filename):
+    return send_from_directory(uploads_root, filename)
 
 
 @app.route('/generate_gif', methods=['POST'])
