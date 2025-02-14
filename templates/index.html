@@ -25,11 +25,11 @@
         </form>
         <div id="image-container">
             {% for image in images %}
-            <div class="image-wrapper" id="{{ image }}">
-                <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/' + image) }}"
-                     alt="{{ image }}">
-                <button class="remove-btn" data-image="{{ image }}">✖</button>
-            </div>
+                <div class="image-wrapper" id="{{ image }}">
+                    <img src="{{ url_for('get_uploaded_file', filename=session['session_id'] + '/' + image) }}"
+                         alt="{{ image }}">
+                    <button class="remove-btn" data-image="{{ image }}">✖</button>
+                </div>
             {% endfor %}
         </div>
     </section>
