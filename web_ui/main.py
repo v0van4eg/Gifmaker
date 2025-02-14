@@ -118,7 +118,6 @@ def new_session():
     return redirect(url_for('index'))
 
 
-
 @app.route('/uploads/<path:filename>')
 def get_uploaded_file(filename):
     return send_from_directory(uploads_root, filename)
