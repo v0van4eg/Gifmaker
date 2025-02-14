@@ -118,10 +118,7 @@ def generate_gif():
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    if 'session_id' not in session:
-        logger.info('@@@ Session ID not found in web_ui')
-        session['session_id'] = str(uuid.uuid4())
-    session_id = session['session_id']
+    session_id = form.get('session_id')
     logger.info(f"@@@ Session ID in web_ui: {session_id}")
     files = request.files.getlist('files')
     if not files:
