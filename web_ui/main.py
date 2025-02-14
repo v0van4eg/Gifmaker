@@ -96,14 +96,24 @@ def index():
 
 @app.route('/new_session', methods=['GET'])
 def new_session():
-    # session_id = session.get('session_id')
-    session_id = request.form.get('session_id')
-    logger.info(f'Создание новой сессии...session_id={session_id}')
-    # Очистка файлов при старте (без удаления папок)
-    clean_uploads()
+    session_id = session.get('session_id')
+    logger.info(f'Очистка сессии... Текущий session_id={session_id}')
+
     if session_id:
-        session.pop('images', None)
-        session['session_id'] = str(uuid.uuid4())
+        session_folder = os.path.join(uploads_root, session_id)
+        if os.path.exists(session_folder):
+            logger.info(f'Удаляем папку сессии: {session_folder}')
+            shutil.rmtree(session_folder)  # Полностью удаляем папку сессии
+
+    # Удаляем сессионные данные
+    session.pop('session_id', None)
+    session.pop('images', None)
+
+    # Генерируем новый session_id
+    new_session_id = str(uuid.uuid4())
+    session['session_id'] = new_session_id
+    logger.info(f'Создан новый session_id={new_session_id}')
+
     return redirect(url_for('index'))
 
 
