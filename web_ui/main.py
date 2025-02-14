@@ -120,6 +120,7 @@ def generate_gif():
 
 @app.route('/upload', methods=['POST'])
 def upload():
+    logger.info(f"@@@ Вызываем загрузку. В обработчике Session ID in web_ui: {session_id}")
     session_id = session.get('session_id')
     logger.info(f"@@@ В обработчике Session ID in web_ui: {session_id}")
     files = request.files.getlist('files')
