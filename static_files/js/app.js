@@ -1,6 +1,6 @@
 $(function () {
     const dropArea = document.getElementById('drop-area');
-    // Предотвращаем стандартное поведение браузера при перетаскивании
+
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, preventDefaults, false);
     });
@@ -10,29 +10,18 @@ $(function () {
         e.stopPropagation();
     }
 
-    // Изменяем стиль области при перетаскивании
     ['dragenter', 'dragover'].forEach(eventName => {
-        dropArea.addEventListener(eventName, highlight, false);
+        dropArea.addEventListener(eventName, () => dropArea.classList.add('highlight'), false);
     });
 
     ['dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, unhighlight, false);
+        dropArea.addEventListener(eventName, () => dropArea.classList.remove('highlight'), false);
     });
 
-    function highlight() {
-        dropArea.classList.add('highlight');
-    }
-
-    function unhighlight() {
-        dropArea.classList.remove('highlight');
-    }
-
-    // Обработка перетаскивания файлов
     dropArea.addEventListener('drop', handleDrop, false);
 
     function handleDrop(e) {
-        let dt = e.dataTransfer;
-        let files = dt.files;
+        let files = e.dataTransfer.files;
         handleFiles(files);
     }
 
@@ -42,13 +31,15 @@ $(function () {
 
     function uploadFiles(files) {
         let formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files', files[i]);
+        for (let file of files) {
+            formData.append('files', file);
         }
-        // Получаем session_id и добавляем его в форму
+
         $.get('/get_session_id', function(response) {
-            let session_id = response.session_id;  // Извлекаем session_id из ответа
-            formData.append('session_id', session_id);  // Добавляем session_id в FormData
+            let session_id = response.session_id;
+            console.log('Полученный session_id:', session_id);  // Лог для отладки
+            formData.append('session_id', String(session_id));  // Преобразуем в строку
+
             $.ajax({
                 url: '/upload',
                 type: 'POST',
@@ -62,92 +53,70 @@ $(function () {
                     console.error('Ошибка загрузки файлов:', error);
                 }
             });
-        });
-    }
-
-    function attachDraggableAndSortable() {
-        $('#image-container').sortable({
-            update: function () {
-                let imageOrder = $(this).sortable('toArray');
-                $.post('/reorder_images', {image_order: imageOrder});
-            }
+        }).fail(function() {
+            console.error('Ошибка получения session_id');
         });
     }
 
     $('#upload-form input[type="file"]').on('change', function () {
-        let formData = new FormData();
-        $.each(this.files, function (_, file) {
-            formData.append('files', file);
-        });
-        // Добавляем session_id в форму
-        $.get('/get_session_id', function(session_id) {
-            formData.append('session_id', session_id);
+        let files = this.files;
+        if (files.length > 0) {
+            uploadFiles(files);
+        }
+    });
+
+    $('#generate-form').on('submit', function (e) {
+        e.preventDefault();
+        let formData = new FormData(this);
+        $('#progress-container').show();
+        $('#progress-bar').width('0%').text('0%');
+
+        $.get('/get_session_id', function(response) {
+            let session_id = response.session_id;
+            console.log('session_id для генерации GIF:', session_id);
+            formData.append('session_id', String(session_id));
+
             $.ajax({
-                url: '/upload',
+                url: '/generate_gif',
                 type: 'POST',
                 data: formData,
                 contentType: false,
                 processData: false,
+                xhr: function () {
+                    let xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function (evt) {
+                        if (evt.lengthComputable) {
+                            let percentComplete = (evt.loaded / evt.total) * 100;
+                            $('#progress-bar').width(percentComplete + '%').text(percentComplete.toFixed(2) + '%');
+                        }
+                    }, false);
+                    return xhr;
+                },
                 success: function () {
+                    $('#progress-container').hide();
                     location.reload();
                 },
                 error: function (xhr, status, error) {
-                    console.error('Ошибка загрузки файлов:', error);
+                    console.error('Ошибка генерации GIF:', error);
+                    $('#progress-container').hide();
                 }
             });
+        }).fail(function() {
+            console.error('Ошибка получения session_id');
         });
     });
 
     $(document).on('click', '.remove-btn', function () {
         let imageName = $(this).data('image');
-        $.post('/remove_image', {image_name: imageName}, function () {
+        $.post('/remove_image', { image_name: imageName }, function () {
             location.reload();
         });
     });
-
-$('#generate-form').on('submit', function (e) {
-    e.preventDefault();
-    let formData = new FormData(this);
-    $('#progress-container').show();
-    $('#progress-bar').width('0%').text('0%');
-    // Получаем session_id и добавляем его в форму
-    $.get('/get_session_id', function(response) {
-        let session_id = response.session_id;  // Извлекаем session_id из ответа
-        formData.append('session_id', session_id);  // Добавляем session_id в FormData
-        $.ajax({
-            url: '/generate_gif',
-            type: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            xhr: function () {
-                let xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function (evt) {
-                    if (evt.lengthComputable) {
-                        let percentComplete = evt.loaded / evt.total * 100;
-                        $('#progress-bar').width(percentComplete + '%').text(percentComplete.toFixed(2) + '%');
-                    }
-                }, false);
-                return xhr;
-            },
-            success: function () {
-                $('#progress-container').hide();
-                location.reload();
-            },
-            error: function (xhr, status, error) {
-                console.error('Ошибка генерации GIF:', error);
-                $('#progress-container').hide();
-            }
-        });
-    });
-});
 
     $('#reverse-order-btn').on('click', function () {
         let images = $('#image-container .image-wrapper').toArray().reverse();
         $('#image-container').html(images);
         let imageOrder = images.map(img => img.id);
-        $.post('/reorder_images', {image_order: imageOrder});
+        $.post('/reorder_images', { image_order: imageOrder });
     });
-
-    attachDraggableAndSortable();
 });
