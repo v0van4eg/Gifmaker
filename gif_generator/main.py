@@ -25,7 +25,7 @@ def generate_gif():
     logger.info(f'Session ID: {session_id}')
     upload_folder = os.path.join(uploads_root, session_id)
     gif_file = os.path.join(upload_folder, 'animation.gif')
-    duration = int(request.form.get('duration', 100))
+    duration = int(request.form.get('duration', 200))
     loop = int(request.form.get('loop', 0))
     resize = request.form.get('resize')
     images = []

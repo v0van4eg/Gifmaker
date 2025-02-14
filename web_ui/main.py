@@ -128,11 +128,15 @@ def get_uploaded_file(filename):
 def generate_gif():
     session_id = session.get('session_id')
     logger.info('@@@ Выбран маршрут Создание GIF...')
+    logge.info("Отправляем данные на гиф-генератор")
     if not session_id:
         return redirect(url_for('index'))
-    duration = request.form.get('duration', 100)
+    duration = request.form.get('duration', 300)
+    logger.info(f'duration={duration}')
     loop = request.form.get('loop', 0)
+    logger.info(f'loop={loop}')
     resize = request.form.get('resize')
+    logger.info(f'resize={resize}')
     generate_url = 'http://gif_generator:5004/generate_gif'
     response = requests.post(generate_url, data={
         'session_id': session_id,
@@ -140,6 +144,7 @@ def generate_gif():
         'loop': loop,
         'resize': resize
     })
+    print(response.status_code)
     if response.status_code == 200:
         return redirect(url_for('index'))
     else:
