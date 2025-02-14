@@ -58,7 +58,9 @@ clean_uploads()
 
 @app.route('/get_session_id', methods=['GET'])
 def get_session_id():
+    logger.info("Генерируем session_id")
     session_id = session.get('session_id')
+    logger.info(f'Отдаём session_id={session_id}')  # Логируем перед возвратом
     if not session_id:
         session_id = str(uuid.uuid4())
         session['session_id'] = session_id
