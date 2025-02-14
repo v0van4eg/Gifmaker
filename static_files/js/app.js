@@ -36,9 +36,20 @@ $(function () {
         }
 
         $.get('/get_session_id', function(response) {
+            console.log('Ответ от сервера:', response);  // Лог для отладки
+            if (!response || !response.session_id) {
+                console.error('Ошибка: session_id отсутствует в ответе');
+                return;
+            }
+
             let session_id = response.session_id;
-            console.log('Полученный session_id:', session_id);  // Лог для отладки
-            formData.append('session_id', String(session_id));  // Преобразуем в строку
+            if (typeof session_id !== 'string') {
+                console.warn('session_id не строка, преобразуем:', session_id);
+                session_id = JSON.stringify(session_id);
+            }
+
+            console.log('Используемый session_id:', session_id);
+            formData.append('session_id', session_id);
 
             $.ajax({
                 url: '/upload',
@@ -72,9 +83,20 @@ $(function () {
         $('#progress-bar').width('0%').text('0%');
 
         $.get('/get_session_id', function(response) {
+            console.log('Ответ от сервера для GIF:', response);
+            if (!response || !response.session_id) {
+                console.error('Ошибка: session_id отсутствует в ответе');
+                return;
+            }
+
             let session_id = response.session_id;
+            if (typeof session_id !== 'string') {
+                console.warn('session_id не строка, преобразуем:', session_id);
+                session_id = JSON.stringify(session_id);
+            }
+
             console.log('session_id для генерации GIF:', session_id);
-            formData.append('session_id', String(session_id));
+            formData.append('session_id', session_id);
 
             $.ajax({
                 url: '/generate_gif',
