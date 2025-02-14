@@ -84,7 +84,8 @@ def index():
 
 @app.route('/new_session', methods=['GET'])
 def new_session():
-    session_id = session.get('session_id')
+    # session_id = session.get('session_id')
+    session_id = request.form.get('session_id')
     logger.info(f'Создание новой сессии...session_id={session_id}')
     # Очистка файлов при старте (без удаления папок)
     clean_uploads()
@@ -97,7 +98,9 @@ def new_session():
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
     logger.info('@@@ Выбран маршрут Создание GIF...')
-    session_id = session.get('session_id')
+    # session_id = session.get('session_id')
+    session_id = request.form.get('session_id')
+
     if not session_id:
         return redirect(url_for('index'))
     print(f"@@@ Сессия ID={session_id}")
@@ -105,7 +108,7 @@ def generate_gif():
     loop = request.form.get('loop', 0)
     resize = request.form.get('resize')
 
-    generate_url = 'http://cloudgif:5004/generate_gif'
+    generate_url = 'http://gif_generator:5004/generate_gif'
     response = requests.post(generate_url, data={'duration': duration, 'loop': loop, 'resize': resize},
                              cookies=request.cookies)
 
@@ -118,8 +121,8 @@ def generate_gif():
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    session_id = form.get('session_id')
-    logger.info(f"@@@ Session ID in web_ui: {session_id}")
+    session_id = request.form.get('session_id')
+    logger.info(f"@@@ В обработчике Session ID in web_ui: {session_id}")
     files = request.files.getlist('files')
     if not files:
         return redirect(url_for('index'))

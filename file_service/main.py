@@ -21,8 +21,8 @@ def allowed_file(filename):
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    session_id = request.form.get('session_id')
-    logger.info(f"@@@ Received session ID in file_service: {session_id}")
+    session_id = session.get('session_id')
+    logger.info(f"@@@ Принимаем session ID в file_service: {session_id}")
     if not session_id:
         return jsonify(error='Session ID not found'), 400
     upload_folder = os.path.join(uploads_root, session_id)
