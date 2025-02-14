@@ -76,7 +76,7 @@ def index():
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
     session_id = session['session_id']
-    logger.info(f'Создаём новую сессию session_id={session_id}')
+    logger.info(f'Получем session_id={session_id}')
     upload_folder = os.path.join(uploads_root, session_id)
     logger.info(f'Создаём папку upload_folder={upload_folder}')
     os.makedirs(upload_folder, exist_ok=True)
