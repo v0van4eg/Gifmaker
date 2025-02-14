@@ -29,6 +29,7 @@ def generate_gif():
     resize = request.form.get('resize')
     images = []
 
+    # Используем имена файлов из сессии
     for image_name in session.get('images', []):
         try:
             image_path = os.path.join(upload_folder, image_name)

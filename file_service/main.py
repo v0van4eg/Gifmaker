@@ -30,22 +30,24 @@ def upload():
     files = request.files.getlist('files')
     if not files:
         return jsonify(error='No selected files'), 400
+
+    new_filenames = []  # Список для хранения новых имен файлов
     for file in files:
         if file and allowed_file(file.filename):
-            # Получаем текущее время UNIX
             unix_time = int(time.time())
-            # Очищаем имя файла и добавляем время UNIX
             original_filename = secure_filename(file.filename)
-            unique_id = str(uuid.uuid4())[:8]  # Берём первые 8 символов UUID
+            unique_id = str(uuid.uuid4())[:8]
             filename = f"IMG_{unix_time}_{unique_id}_{original_filename}"
             logger.info(f"Filename: {filename}")
             file_path = os.path.join(upload_folder, filename)
             try:
                 file.save(file_path)
                 logger.info(f"Saved file {filename} to {file_path}")
+                new_filenames.append(filename)  # Добавляем новое имя файла в список
             except Exception as e:
                 return jsonify(error=f'Failed to save file: {str(e)}'), 500
-    return jsonify(success=True)
+
+    return jsonify(success=True, filenames=new_filenames)
 
 
 if __name__ == '__main__':

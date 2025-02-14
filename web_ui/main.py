@@ -8,7 +8,6 @@ import requests
 import logging
 import shutil
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -52,6 +51,9 @@ def clean_uploads():
                     shutil.rmtree(item_path)  # Рекурсивно удаляем директорию и её содержимое
                 else:
                     os.remove(item_path)  # Удаляем файл
+
+
+clean_uploads()
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -127,12 +129,11 @@ def upload():
     upload_url = 'http://cloudgif:5002/upload'
     data = {'session_id': session_id}
     files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
-    # Убедитесь, что данные формы передаются вместе с файлами
     response = requests.post(upload_url, data=data, files=files_data)
     if response.status_code == 200:
-        for file in files:
-            filename = secure_filename(file.filename)
-            session.setdefault('images', []).append(filename)
+        response_data = response.json()
+        new_filenames = response_data.get('filenames', [])  # Получаем новые имена файлов
+        session.setdefault('images', []).extend(new_filenames)  # Сохраняем новые имена в сессии
     return redirect(url_for('index'))
 
 

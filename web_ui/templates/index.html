@@ -26,6 +26,7 @@
             <div id="image-container">
                 {% for image in images %}
                     <div class="image-wrapper" id="{{ image }}">
+                        <!-- Отображаем изображение с новым именем файла -->
                         <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/' + image) }}" alt="{{ image }}">
                         <button class="remove-btn" data-image="{{ image }}">✖</button>
                     </div>
@@ -48,6 +49,7 @@
             {% if gif_file %}
                 <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/animation.gif') }}?{{ time }}" alt="GIF" id="gif-image">
             {% endif %}
+
         </section>
     </main>
     <footer>
@@ -55,5 +57,3 @@
     </footer>
 </body>
 </html>
-
-
