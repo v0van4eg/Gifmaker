@@ -128,7 +128,7 @@ def get_uploaded_file(filename):
 def generate_gif():
     session_id = session.get('session_id')
     logger.info('@@@ Выбран маршрут Создание GIF...')
-    logge.info("Отправляем данные на гиф-генератор")
+    logger.info("Отправляем данные на гиф-генератор")
     if not session_id:
         return redirect(url_for('index'))
     duration = request.form.get('duration', 300)
