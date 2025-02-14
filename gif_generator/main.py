@@ -17,7 +17,7 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
-    logger.info(f"@@@ Мы внутриЗапускаем генератор GIF")
+    logger.info(f"@@@ Мы внутри Запускаем генератор GIF")
     session_id = request.form.get('session_id')
     logger.info(f'Session ID через request form: {session_id}')
     if not session_id:
@@ -26,8 +26,11 @@ def generate_gif():
     upload_folder = os.path.join(uploads_root, session_id)
     gif_file = os.path.join(upload_folder, 'animation.gif')
     duration = int(request.form.get('duration', 200))
+    logger.info(f'Duration: {duration}')
     loop = int(request.form.get('loop', 0))
+    logger.info(f'Loop: {loop}')
     resize = request.form.get('resize')
+    logger.info(f'Resize: {resize}')
     images = []
     for image_name in os.listdir(upload_folder):
         try:
