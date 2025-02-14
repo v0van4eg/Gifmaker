@@ -1,0 +1,7 @@
+Описание сервисов и выполняемых ими функций
+
+1. file_service - upload
+2. image+processing - remove_image, reorder_images
+3. gif_generator - generate_gif
+4. web_ui - index, new_session
+5. nginx - api gateway для всех микросервисов

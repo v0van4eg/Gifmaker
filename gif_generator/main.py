@@ -1,0 +1,60 @@
+# gif_generator/main.py
+
+from flask import Flask, request, jsonify, redirect, url_for, session
+import os
+import numpy as np
+import imageio.v2 as imageio
+from PIL import Image, ImageOps
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'
+uploads_root = os.path.join(app.root_path, 'uploads')
+
+
+@app.route('/generate_gif', methods=['POST'])
+def generate_gif():
+    session_id = session.get('session_id')
+    logger.info(f'Session ID: {session_id}')
+    if not session_id:
+        return jsonify(error='Session ID not found'), 400
+
+    upload_folder = os.path.join(uploads_root, session_id)
+    gif_file = os.path.join(upload_folder, 'animation.gif')
+    duration = int(request.form.get('duration', 100))
+    loop = int(request.form.get('loop', 0))
+    resize = request.form.get('resize')
+    images = []
+
+    for image_name in session.get('images', []):
+        try:
+            image_path = os.path.join(upload_folder, image_name)
+            img = Image.open(image_path)
+            img = ImageOps.exif_transpose(img)
+            if resize:
+                width, height = map(int, resize.split('x'))
+                img = img.resize((width, height), Image.LANCZOS)
+            images.append(np.array(img))
+        except Exception as e:
+            print(f"Error processing image {image_name}: {e}")
+            continue
+
+    if not images:
+        return jsonify(error='No valid images uploaded'), 400
+
+    try:
+        with imageio.get_writer(gif_file, mode='I', duration=duration / 1000.0, loop=loop) as writer:
+            for img in images:
+                writer.append_data(img)
+    except Exception as e:
+        print(f"Error generating GIF: {e}")
+        return jsonify(error='Error generating GIF'), 500
+
+    return jsonify(success=True, gif_url=url_for('static', filename=os.path.join(session_id, 'animation.gif')))
+
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5004)
