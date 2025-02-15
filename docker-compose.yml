@@ -22,7 +22,7 @@ services:
       - ./static_files:/app/static
       - ./templates:/app/templates
     environment:
-      SESSION_COOKIE_DOMAIN: cloudgif
+      SESSION_COOKIE_DOMAIN: cloud.vldm.ru
     ports:
       - "5000:5000"
 
