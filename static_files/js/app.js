@@ -1,7 +1,6 @@
 $(function () {
     const dropArea = document.getElementById('drop-area');
 
-    // Предотвращаем стандартное поведение браузера при перетаскивании
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, preventDefaults, false);
     });
@@ -11,7 +10,6 @@ $(function () {
         e.stopPropagation();
     }
 
-    // Изменяем стиль области при перетаскивании
     ['dragenter', 'dragover'].forEach(eventName => {
         dropArea.addEventListener(eventName, highlight, false);
     });
@@ -27,7 +25,6 @@ $(function () {
         dropArea.classList.remove('highlight');
     }
 
-    // Обработка перетаскивания файлов
     dropArea.addEventListener('drop', handleDrop, false);
 
     function handleDrop(e) {
@@ -46,7 +43,7 @@ $(function () {
             formData.append('files', files[i]);
         }
         $.ajax({
-            url: '/',
+            url: '/api/upload',
             type: 'POST',
             data: formData,
             contentType: false,
@@ -56,6 +53,7 @@ $(function () {
             },
             error: function (xhr, status, error) {
                 console.error('Ошибка загрузки файлов:', error);
+                alert('Ошибка загрузки файлов: ' + error);
             }
         });
     }
@@ -64,7 +62,7 @@ $(function () {
         $('#image-container').sortable({
             update: function () {
                 let imageOrder = $(this).sortable('toArray');
-                $.post('/reorder_images', {image_order: imageOrder});
+                $.post('/api/reorder_images', {image_order: imageOrder});
             }
         });
     }
@@ -75,7 +73,7 @@ $(function () {
             formData.append('files', file);
         });
         $.ajax({
-            url: '/',
+            url: '/api/upload',
             type: 'POST',
             data: formData,
             contentType: false,
@@ -85,16 +83,20 @@ $(function () {
             },
             error: function (xhr, status, error) {
                 console.error('Ошибка загрузки файлов:', error);
+                alert('Ошибка загрузки файлов: ' + error);
             }
         });
     });
 
     $(document).on('click', '.remove-btn', function () {
         let imageName = $(this).data('image');
-        let imageWrapper = $(this).closest('.image-wrapper'); // Находим контейнер изображения
+        let imageWrapper = $(this).closest('.image-wrapper');
 
-        $.post('cloud.vldm.ru:5003/remove_image', {image_name: imageName}, function () {
-            imageWrapper.remove(); // Удаляем контейнер изображения из DOM
+        $.post('/api/remove_image', {image_name: imageName}, function () {
+            imageWrapper.remove();
+        }).fail(function (xhr, status, error) {
+            console.error('Ошибка удаления изображения:', error);
+            alert('Ошибка удаления изображения: ' + error);
         });
     });
 
@@ -105,7 +107,7 @@ $(function () {
         $('#progress-bar').width('0%').text('0%');
 
         $.ajax({
-            url: $(this).attr('action'),
+            url: '/api/generate_gif',
             type: 'POST',
             data: formData,
             contentType: false,
@@ -127,6 +129,7 @@ $(function () {
             error: function (xhr, status, error) {
                 console.error('Ошибка генерации GIF:', error);
                 $('#progress-container').hide();
+                alert('Ошибка генерации GIF: ' + error);
             }
         });
     });
@@ -136,9 +139,8 @@ $(function () {
         $('#image-container').html(images);
 
         let imageOrder = images.map(img => img.id);
-        $.post('/reorder_images', {image_order: imageOrder});
+        $.post('/api/reorder_images', {image_order: imageOrder});
     });
 
     attachDraggableAndSortable();
-
 });
