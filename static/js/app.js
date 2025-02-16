@@ -91,8 +91,10 @@ $(function () {
 
     $(document).on('click', '.remove-btn', function () {
         let imageName = $(this).data('image');
+        let imageWrapper = $(this).closest('.image-wrapper'); // Находим контейнер изображения
+
         $.post('/remove_image', {image_name: imageName}, function () {
-            location.reload();
+            imageWrapper.remove(); // Удаляем контейнер изображения из DOM
         });
     });
 
@@ -138,4 +140,5 @@ $(function () {
     });
 
     attachDraggableAndSortable();
+
 });

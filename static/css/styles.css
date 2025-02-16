@@ -57,11 +57,13 @@ footer {
     width: calc(25% - 10px); /* Три колонки */
     max-width: 200px; /* Ограничение по ширине */
     text-align: center;
+    position: relative; /* Добавлено */
 }
 
 .image-wrapper img {
     width: 100%;
     height: auto;
+    display: block; /* Добавлено */
 }
 
 .remove-btn {
@@ -78,6 +80,7 @@ footer {
     font-size: 12px;
     line-height: 1;
     transition: background-color 0.3s;
+    z-index: 1; /* Добавлено */
 }
 
 .remove-btn:hover {
