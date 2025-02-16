@@ -62,7 +62,7 @@ $(function () {
         $('#image-container').sortable({
             update: function () {
                 let imageOrder = $(this).sortable('toArray');
-                $.post('/api/reorder_images', {image_order: imageOrder});
+                $.post('/reorder_images', {image_order: imageOrder});
             }
         });
     }
