@@ -26,7 +26,7 @@
             <div id="image-container">
                 {% for image in images %}
                     <div class="image-wrapper" id="{{ image }}">
-                        <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/' + image) }}" alt="{{ image }}">
+                        <img src="{{ url_for('get_uploaded_file', filename=image) }}" alt="{{ image }}">
                         <button class="remove-btn" data-image="{{ image }}">✖</button>
                     </div>
                 {% endfor %}
@@ -46,7 +46,7 @@
                 <div id="progress-bar" style="width: 0%;"></div>
             </div>
             {% if gif_file %}
-                <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/animation.gif') }}?{{ time }}" alt="GIF" id="gif-image">
+                        <img src="{{ url_for('get_uploaded_file', filename=image) }}" alt="{{ image }}">
             {% endif %}
         </section>
     </main>
