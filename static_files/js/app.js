@@ -93,7 +93,7 @@ $(function () {
         let imageName = $(this).data('image');
         let imageWrapper = $(this).closest('.image-wrapper'); // Находим контейнер изображения
 
-        $.post('/remove_image', {image_name: imageName}, function () {
+        $.post('cloud.vldm.ru:5003/remove_image', {image_name: imageName}, function () {
             imageWrapper.remove(); // Удаляем контейнер изображения из DOM
         });
     });
