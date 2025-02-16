@@ -5,6 +5,6 @@ services:
     restart: unless-stopped
     container_name: gifmaker
     volumes:
-      - ./uploads:/app/static/uploads
+      - ./uploads:/app/uploads
     ports:
       - 8050:5000
