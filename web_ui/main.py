@@ -119,7 +119,7 @@ def new_session():
 
 
 @app.route('/uploads/<path:filename>')
-def uploaded_file(filename):
+def get_uploaded_file(filename):
     session_id = session.get('session_id')
     if not session_id:
         return "Session ID not found", 404
