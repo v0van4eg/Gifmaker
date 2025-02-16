@@ -40,13 +40,7 @@ footer {
     cursor: pointer;
     transition: background-color 0.3s;
     margin-bottom: 20px;
-    width: 100%; /* Чтобы не сужалось */
 }
-
-.drop-zone input[type="file"] {
-    display: none; /* Скрываем стандартный инпут */
-}
-
 
 .drop-zone.highlight {
     background-color: #f9f9f9;
@@ -60,15 +54,16 @@ footer {
 }
 
 .image-wrapper {
-    width: calc(25% - 10px);
-    max-width: 200px;
+    width: calc(25% - 10px); /* Три колонки */
+    max-width: 200px; /* Ограничение по ширине */
     text-align: center;
-    position: relative; /* Добавляем, чтобы кнопка удаления правильно позиционировалась */
+    position: relative; /* Добавлено */
 }
 
 .image-wrapper img {
     width: 100%;
     height: auto;
+    display: block; /* Добавлено */
 }
 
 .remove-btn {
@@ -85,6 +80,7 @@ footer {
     font-size: 12px;
     line-height: 1;
     transition: background-color 0.3s;
+    z-index: 1; /* Добавлено */
 }
 
 .remove-btn:hover {

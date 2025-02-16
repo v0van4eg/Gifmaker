@@ -119,8 +119,11 @@ def new_session():
 
 
 @app.route('/uploads/<path:filename>')
-def get_uploaded_file(filename):
-    return send_from_directory(uploads_root, filename)
+def uploaded_file(filename):
+    session_id = session.get('session_id')
+    if not session_id:
+        return "Session ID not found", 404
+    return send_from_directory(os.path.join(uploads_root, session_id), filename)
 
 
 @app.route('/generate_gif', methods=['POST'])
