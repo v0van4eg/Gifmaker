@@ -92,7 +92,7 @@ $(function () {
         let imageName = $(this).data('image');
         let imageWrapper = $(this).closest('.image-wrapper');
 
-        $.post('/api/remove_image', {image_name: imageName}, function () {
+        $.post('/remove_image', {image_name: imageName}, function () {
             imageWrapper.remove();
         }).fail(function (xhr, status, error) {
             console.error('Ошибка удаления изображения:', error);
@@ -107,7 +107,7 @@ $(function () {
         $('#progress-bar').width('0%').text('0%');
 
         $.ajax({
-            url: '/api/generate_gif',
+            url: '/generate_gif',
             type: 'POST',
             data: formData,
             contentType: false,
@@ -139,7 +139,7 @@ $(function () {
         $('#image-container').html(images);
 
         let imageOrder = images.map(img => img.id);
-        $.post('/api/reorder_images', {image_order: imageOrder});
+        $.post('/nginx/reorder_images', {image_order: imageOrder});
     });
 
     attachDraggableAndSortable();
