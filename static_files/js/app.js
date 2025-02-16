@@ -139,7 +139,7 @@ $(function () {
         $('#image-container').html(images);
 
         let imageOrder = images.map(img => img.id);
-        $.post('/nginx/reorder_images', {image_order: imageOrder});
+        $.post('/reorder_images', {image_order: imageOrder});
     });
 
     attachDraggableAndSortable();
