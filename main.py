@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
 # Очистка папки uploads при запуске
-uploads_root = os.path.join(app.root_path, 'uploads')
+uploads_root = ('./uploads')
 if os.path.exists(uploads_root):
     shutil.rmtree(uploads_root)
 os.makedirs(uploads_root, exist_ok=True)
