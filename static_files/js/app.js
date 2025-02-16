@@ -43,7 +43,7 @@ $(function () {
             formData.append('files', files[i]);
         }
         $.ajax({
-            url: '/api/upload',
+            url: '/upload',
             type: 'POST',
             data: formData,
             contentType: false,
@@ -73,7 +73,7 @@ $(function () {
             formData.append('files', file);
         });
         $.ajax({
-            url: '/api/upload',
+            url: '/upload',
             type: 'POST',
             data: formData,
             contentType: false,
