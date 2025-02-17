@@ -140,7 +140,7 @@ def generate_gif():
     logger.info(f'loop={loop}')
     resize = request.form.get('resize')
     logger.info(f'resize={resize}')
-    generate_url = 'http://gif_generator:5004/generate_gif'
+    generate_url = 'http://gif_generator:5002/generate_gif'
     response = requests.post(generate_url, data={
         'session_id': session_id,
         'duration': duration,
@@ -162,7 +162,7 @@ def upload():
     files = request.files.getlist('files')
     if not files:
         return redirect(url_for('index'))
-    upload_url = 'http://file_service:5002/upload'
+    upload_url = 'http://image_processing:5001/upload'
     data = {'session_id': session_id}
     files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
     response = requests.post(upload_url, data=data, files=files_data)
@@ -171,6 +171,53 @@ def upload():
         new_filenames = response_data.get('filenames', [])
         session.setdefault('images', []).extend(new_filenames)
     return redirect(url_for('index'))
+
+
+# маршруты для манипуляций с файлами
+@app.route('/remove_image', methods=['POST'])
+def remove_image():
+    session_id = session.get('session_id')
+    logger.info(f"@@@ Маршрут Remove Image. Session ID in web_ui: {session_id}")
+    try:
+        image_name = request.form.get('image_name')
+        if not image_name:
+            return jsonify({'success': False, 'message': 'Имя файла не указано'}), 400
+
+        # Отправляем запрос к микросервису image_processing
+        response = requests.post(f'http://image_processing:5001/remove_image', data={'session_id': session_id, 'image_name': image_name})
+
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        else:
+            return jsonify({'success': False, 'message': response.text}), response.status_code
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/reorder_images', methods=['POST'])
+def reorder_images():
+    session_id = session.get('session_id')
+    if not session_id:
+        return jsonify(error='Session ID not found'), 400
+
+    image_order = request.form.get('image_order')
+    if not image_order:
+        return jsonify(error='Image order not provided'), 400
+
+    # Отправляем запрос в image_processing для изменения порядка изображений
+    reorder_url = 'http://image_processing:5001/reorder_images'
+    response = requests.post(reorder_url, data={
+        'session_id': session_id,
+        'image_order': image_order
+    })
+
+    if response.status_code == 200:
+        # Обновляем порядок изображений в сессии
+        if 'images' in session:
+            session['images'] = image_order.split(',')
+        return jsonify(success=True)
+    else:
+        return jsonify(error='Failed to reorder images'), 500
 
 
 if __name__ == '__main__':

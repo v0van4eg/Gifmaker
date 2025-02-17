@@ -45,9 +45,11 @@
         <div id="progress-container" style="display: none;">
             <div id="progress-bar" style="width: 0%;"></div>
         </div>
-        {% if gif_file %}
-        <img src="{{ url_for('get_uploaded_file', filename='animation.gif') }}" alt="GIF">
-        {% endif %}
+        <div id="gif-container">
+            {% if gif_file %}
+                <img src="{{ url_for('get_uploaded_file', filename='animation.gif') }}" alt="GIF">
+            {% endif %}
+        </div>
     </section>
 </main>
 <footer>

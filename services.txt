@@ -1,7 +1,6 @@
 Микросервисы и их функции
 
-1. file_service - /upload and save to folder /app/uploads
-2. image+processing - /remove_image, /reorder_images
-3. gif_generator - /generate_gif
-4. web_ui - index, /new_session
-5. nginx - api gateway для всех микросервисов
+1. image+processing - /remove_image, /reorder_images, /upload
+2. gif_generator - /generate_gif
+3. web_ui - index, /new_session
+4. nginx - api gateway для всех микросервисов
