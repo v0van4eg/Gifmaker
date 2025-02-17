@@ -1,8 +1,8 @@
 services:
-  nginx:
+  api:
     image: nginx:latest
     restart: unless-stopped
-    container_name: nginx
+    container_name: api
     ports:
       - "8050:80"
     volumes:
@@ -33,8 +33,8 @@ services:
     container_name: file_service
     volumes:
       - ./uploads:/app/uploads
-    ports:
-      - "5002:5002"
+#    ports:
+#      - "5002:5002"
 
   image_processing:
     build: ./image_processing
@@ -43,8 +43,8 @@ services:
     container_name: image_processing
     volumes:
       - ./uploads:/app/uploads
-    ports:
-      - "5003:5003"
+#    ports:
+#      - "5003:5003"
 
   gif_generator:
     build: ./gif_generator
@@ -53,5 +53,5 @@ services:
     container_name: gif_generator
     volumes:
       - ./uploads:/app/uploads
-    ports:
-      - "5004:5004"
+#    ports:
+#      - "5004:5004"

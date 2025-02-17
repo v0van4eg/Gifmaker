@@ -133,6 +133,7 @@ def generate_gif():
     logger.info("Отправляем данные на гиф-генератор")
     if not session_id:
         return redirect(url_for('index'))
+    logger.info(f'session_id={session_id}')
     duration = request.form.get('duration', 300)
     logger.info(f'duration={duration}')
     loop = request.form.get('loop', 0)
@@ -157,7 +158,7 @@ def generate_gif():
 @app.route('/upload', methods=['POST'])
 def upload():
     session_id = session.get('session_id')
-    logger.info(f"@@@ В обработчике Session ID in web_ui: {session_id}")
+    logger.info(f"@@@ Маршрут Upload. Session ID in web_ui: {session_id}")
     files = request.files.getlist('files')
     if not files:
         return redirect(url_for('index'))

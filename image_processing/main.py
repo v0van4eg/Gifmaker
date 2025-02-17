@@ -36,7 +36,7 @@ def reorder_images():
         if os.path.exists(old_path):
             os.rename(old_path, new_path)
 
-    # Rename back to original names
+
     for idx, image_name in enumerate(image_order):
         old_path = os.path.join(uploads_root, f'{idx:04d}_{image_name}')
         new_path = os.path.join(uploads_root, image_name)

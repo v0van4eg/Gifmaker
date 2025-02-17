@@ -22,12 +22,11 @@ def allowed_file(filename):
 @app.route('/upload', methods=['POST'])
 def upload():
     logger.info("-----------")
-    logger.info("@@@ Мы внутри контейнера file_services")
+    logger.info("@@@ Мы внутри контейнера file_services Upload")
     session_id = request.form.get('session_id')  # Получаем session_id из запроса
-    logger.info(f'Session ID через request form: {session_id}')
-
     if not session_id:
         return jsonify(error='Session ID not found'), 400
+    logger.info(f'Session ID через request form: {session_id}')
     upload_folder = os.path.join(uploads_root, session_id)
     os.makedirs(upload_folder, exist_ok=True)
     files = request.files.getlist('files')
