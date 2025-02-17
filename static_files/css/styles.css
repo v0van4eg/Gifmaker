@@ -113,6 +113,7 @@ input[type="text"]:focus {
 }
 #gif-container {
     width: 100%;
+    height: auto;
     text-align: center;
     box-sizing: border-box;
 }
@@ -121,12 +122,12 @@ input[type="text"]:focus {
     width: 100%;
     max-width: 100%;
     height: auto;
-    object-fit: contain; /* Пропорциональное масштабирование */
+    display: block;
     margin: 0 auto;
-    border-radius: 10px;
+    object-fit: contain; /* Пропорциональное масштабирование */
+    border-radius: 20px; /* Сглаженные углы */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-
 .left-column {
     width: 70%;
     padding-right: 20px;

@@ -47,7 +47,8 @@
         </div>
         <div id="gif-container">
             {% if gif_file %}
-                <img src="{{ url_for('get_uploaded_file', filename='animation.gif') }}" alt="GIF">
+                <img src="{{ url_for('get_uploaded_file', filename='animation.gif') }}" alt="GIF" id="gif-image">
+                <a href="{{ url_for('get_uploaded_file', filename='animation.gif') }}" download="animation.gif" class="btn">Скачать GIF</a>
             {% endif %}
         </div>
     </section>
