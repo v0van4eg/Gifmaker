@@ -217,8 +217,7 @@ def reorder_images():
             session['images'] = image_order.split(',')
         return jsonify(success=True)
     else:
-        return jsonify(error='Failed to reorder images'), 500
-
+        return jsonify(error='Failed to reorder images'), response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

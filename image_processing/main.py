@@ -58,15 +58,13 @@ def upload():
 def reorder_images():
     logger.info("Мы внутри image_processing/reorder_images\nВыполняю перестановку изображений")
     session_id = request.form.get('session_id')
-    image_order = request.form.get('image_order')
     logger.info(f'Session ID: {session_id}')
-    logger.info(f'Image order: {image_order}')
+    image_order = request.form.get('image_order')
+    if not image_order:
+        return jsonify(error='Image order not provided'), 400
 
-    if not session_id or not image_order:
-        return jsonify(error='Session ID or Image order not provided'), 400
-
-    upload_folder = os.path.join(uploads_root, session_id)
     image_order = image_order.split(',')
+    upload_folder = os.path.join(uploads_root, session_id)
 
     for idx, image_name in enumerate(image_order):
         old_path = os.path.join(upload_folder, image_name)
