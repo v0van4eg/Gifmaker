@@ -202,6 +202,8 @@ def reorder_images():
         return jsonify(success=False, error='Session ID not found'), 400
 
     image_order = request.form.get('image_order')
+    logger.info(f'Получен image_order!!!!!!!!!!: {image_order}')
+
     if not image_order:
         return jsonify(success=False, error='Image order not provided'), 400
 
@@ -213,6 +215,8 @@ def reorder_images():
 
     # Отправляем запрос в image_processing для изменения порядка изображений
     reorder_url = 'http://image_processing:5001/reorder_images'
+    logger.info(f'Отправляем image_order: {image_order}')
+
     response = requests.post(reorder_url, data={
         'session_id': session_id,
         'image_order': ','.join(image_order_list)  # Убедимся, что передаем строку

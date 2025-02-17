@@ -61,19 +61,37 @@ $(function () {
     function attachDraggableAndSortable() {
         $('#image-container').sortable({
             update: function () {
-                let imageOrder = $(this).sortable('toArray');
-                $.post('/reorder_images', {image_order: imageOrder}, function (response) {
-                    if (!response.success) {
-                        console.error('Ошибка перестановки изображений:', response.error);
-                        alert('Ошибка перестановки изображений: ' + response.error);
+                let imageOrder = $(this).sortable('toArray'); // Получаем новый порядок id-шников
+                if (imageOrder.length === 0) {
+                    console.error('Ошибка: массив imageOrder пуст');
+                    return;
+                }
+
+                let imageOrderString = imageOrder.join(','); // Преобразуем в строку
+                console.log('Отправляемый порядок изображений:', imageOrderString); // Лог для отладки
+
+                $.ajax({
+                    url: '/reorder_images',
+                    type: 'POST',
+                    data: { image_order: imageOrderString },
+                    contentType: 'application/x-www-form-urlencoded',
+                    success: function (response) {
+                        if (!response.success) {
+                            console.error('Ошибка перестановки изображений:', response.error);
+                            alert('Ошибка перестановки изображений: ' + response.error);
+                        } else {
+                            console.log('Перестановка успешна:', response);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Ошибка перестановки изображений:', xhr.responseText || error);
+                        alert('Ошибка перестановки изображений: ' + (xhr.responseText || error));
                     }
-                }).fail(function (xhr, status, error) {
-                    console.error('Ошибка перестановки изображений:', error);
-                    alert('Ошибка перестановки изображений: ' + error);
                 });
             }
         });
     }
+
 
     $('#upload-form input[type="file"]').on('change', function () {
         let formData = new FormData();
@@ -147,7 +165,7 @@ $(function () {
         $('#image-container').html(images);
 
         let imageOrder = images.map(img => img.id);
-        $.post('/reorder_images', {image_order: imageOrder});
+        $.post('/reorder_images', {image_order: imageOrder.join(',')});
     });
 
     attachDraggableAndSortable();
