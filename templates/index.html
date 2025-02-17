@@ -40,7 +40,12 @@
             <input type="number" name="loop" id="loop" min="0" value="0">
             <label for="resize">Размер (ШxВ):</label>
             <input type="text" name="resize" id="resize" placeholder="например 400x300">
-            <input type="submit" value="Создать GIF" class="btn">
+            <div class="button-container">
+                <input type="submit" value="Создать GIF" class="btn">
+                {% if gif_file %}
+                    <a href="{{ url_for('get_uploaded_file', filename='animation.gif') }}" download="animation.gif" class="btn">Скачать GIF</a>
+                {% endif %}
+            </div>
         </form>
         <div id="progress-container" style="display: none;">
             <div id="progress-bar" style="width: 0%;"></div>
@@ -48,7 +53,6 @@
         <div id="gif-container">
             {% if gif_file %}
                 <img src="{{ url_for('get_uploaded_file', filename='animation.gif') }}" alt="GIF" id="gif-image">
-                <a href="{{ url_for('get_uploaded_file', filename='animation.gif') }}" download="animation.gif" class="btn">Скачать GIF</a>
             {% endif %}
         </div>
     </section>
