@@ -62,7 +62,15 @@ $(function () {
         $('#image-container').sortable({
             update: function () {
                 let imageOrder = $(this).sortable('toArray');
-                $.post('/reorder_images', {image_order: imageOrder});
+                $.post('/reorder_images', {image_order: imageOrder}, function (response) {
+                    if (!response.success) {
+                        console.error('Ошибка перестановки изображений:', response.error);
+                        alert('Ошибка перестановки изображений: ' + response.error);
+                    }
+                }).fail(function (xhr, status, error) {
+                    console.error('Ошибка перестановки изображений:', error);
+                    alert('Ошибка перестановки изображений: ' + error);
+                });
             }
         });
     }

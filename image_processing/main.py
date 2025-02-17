@@ -65,7 +65,7 @@ def reorder_images():
 
     image_order = image_order.split(',')
     upload_folder = os.path.join(uploads_root, session_id)
-
+    logger.info(f'Полученный порядок файлов: {image_order_str}')
     for idx, image_name in enumerate(image_order):
         old_path = os.path.join(upload_folder, image_name)
         new_path = os.path.join(upload_folder, f'{idx:04d}_{image_name}')

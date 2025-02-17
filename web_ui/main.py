@@ -184,7 +184,8 @@ def remove_image():
             return jsonify({'success': False, 'message': 'Имя файла не указано'}), 400
 
         # Отправляем запрос к микросервису image_processing
-        response = requests.post(f'http://image_processing:5001/remove_image', data={'session_id': session_id, 'image_name': image_name})
+        response = requests.post(f'http://image_processing:5001/remove_image',
+                                 data={'session_id': session_id, 'image_name': image_name})
 
         if response.status_code == 200:
             return jsonify(response.json()), 200
@@ -198,26 +199,33 @@ def remove_image():
 def reorder_images():
     session_id = session.get('session_id')
     if not session_id:
-        return jsonify(error='Session ID not found'), 400
+        return jsonify(success=False, error='Session ID not found'), 400
 
     image_order = request.form.get('image_order')
     if not image_order:
-        return jsonify(error='Image order not provided'), 400
+        return jsonify(success=False, error='Image order not provided'), 400
+
+    # Логирование для отладки
+    logger.info(f'Received image_order: {image_order}')
+
+    # Преобразуем строку image_order в список
+    image_order_list = image_order.split(',')
 
     # Отправляем запрос в image_processing для изменения порядка изображений
     reorder_url = 'http://image_processing:5001/reorder_images'
     response = requests.post(reorder_url, data={
         'session_id': session_id,
-        'image_order': image_order
+        'image_order': ','.join(image_order_list)  # Убедимся, что передаем строку
     })
 
     if response.status_code == 200:
         # Обновляем порядок изображений в сессии
-        if 'images' in session:
-            session['images'] = image_order.split(',')
+        session['images'] = image_order_list
         return jsonify(success=True)
     else:
-        return jsonify(error='Failed to reorder images'), response.status_code
+        logger.error(f'Error reordering images: {response.text}')
+        return jsonify(success=False, error='Failed to reorder images'), response.status_code
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
