@@ -24,7 +24,7 @@ def allowed_file(filename):
 @app.route('/upload', methods=['POST'])
 def upload():
     logger.info("@@@ Мы внутри контейнера image_processing/upload")
-    session_id = request.headers.get('X-Session-ID')
+    session_id = request.headers.get('session_id')
     # Получаем session_id из запроса
     if not session_id:
         return jsonify(error='Session ID not found'), 400
@@ -33,7 +33,7 @@ def upload():
 
     # Проверяем существование папки перед созданием
     if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder, exist_ok=True)
+        logger.info(f"Каталог {upload_folder} не существует")
 
     files = request.files.getlist('files')
     if not files:
@@ -61,11 +61,12 @@ def upload():
 # Перестановка изображений
 @app.route('/reorder_images', methods=['POST'])
 def reorder_images():
-    logger.info("Мы внутри image_processing/reorder_images\nВыполняю перестановку изображений")
-    session_id = request.form.get('session_id')  # Получаем session_id из запроса
-    if not session_id:
-        session_id = request.headers.get('X-Session-ID')  # Пытаемся получить из заголовков
-    logger.info(f'Плолученный из формы Session ID: {session_id}')
+    logger.info("Мы внутри image_processing/reorder_images")
+    logger.info("Выполняю перестановку изображений")
+    session_id = request.headers.get('X-Session-ID')  # Получаем session_id из запроса
+    # if not session_id:
+    #     session_id = request.headers.get('X-Session-ID')  # Пытаемся получить из заголовков
+    logger.info(f'Плолученный из header Session ID: {session_id}')
     image_order = request.form.get('image_order')
     if not image_order:
         return jsonify(error='Image order not provided'), 400

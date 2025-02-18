@@ -25,7 +25,8 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 
 
 def clean_uploads():
-    # Очистка файлов при старте (включая удаление папок)
+
+    # # Очистка файлов при старте (включая удаление папок)
     logger.info('Проверяем наличие папки uploads...')
     if os.path.exists(uploads_root):
         logger.info('Очищаем старые загрузки...')
