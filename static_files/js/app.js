@@ -60,7 +60,6 @@ $(function () {
             data: formData,
             contentType: false,
             processData: false,
-            headers: { 'X-Session-ID': session_id },  // Прокидываем session_id
             success: function () {
                 location.reload();
             },

@@ -25,7 +25,6 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 
 
 def clean_uploads():
-
     # # Очистка файлов при старте (включая удаление папок)
     logger.info('Проверяем наличие папки uploads...')
     if os.path.exists(uploads_root):
@@ -115,38 +114,44 @@ def get_uploaded_file(filename):
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    logger.info("@@@ Мы внутри контейнера image_processing/upload")
-    session_id = request.headers.get('X-Session-ID')
-    # Получаем session_id из запроса
+    logger.info("@@@ Вызываем маршрут /upload")
+
+    # Получаем session_id из сессии
+    session_id = session.get('session_id')
     if not session_id:
         return jsonify(error='Session ID not found'), 400
-    logger.info(f'Session ID через request form: {session_id}')
-    upload_folder = os.path.join(uploads_root, session_id)
 
-    # Проверяем существование папки перед созданием
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder, exist_ok=True)
+    logger.info(f'Session ID: {session_id}')
 
+    # Получаем файлы из запроса
     files = request.files.getlist('files')
     if not files:
-        return jsonify(error='No selected files'), 400
-    new_filenames = []
-    for file in files:
-        if file and allowed_file(file.filename):
-            unix_time = int(time.time())
-            original_filename = secure_filename(file.filename)
-            unique_id = str(uuid.uuid4())[:8]
-            filename = f"IMG_{unix_time}_{unique_id}_{original_filename}"
-            logger.info(f"Filename: {filename}")
-            file_path = os.path.join(upload_folder, filename)
-            logger.info(f"File path: {file_path}")
-            try:
-                file.save(file_path)
-                logger.info(f"Saved file {filename} to {file_path}")
-                new_filenames.append(filename)
-            except Exception as e:
-                return jsonify(error=f'Failed to save file: {str(e)}'), 500
-    return jsonify(success=True, filenames=new_filenames)
+        return jsonify(error='No files uploaded'), 400
+
+    # Подготавливаем данные для отправки на image_processing
+    upload_url = 'http://image_processing:5001/upload'
+    data = {'session_id': session_id}
+    files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
+
+    try:
+        # Отправляем запрос на image_processing
+        response = requests.post(upload_url, data=data, files=files_data)
+
+        # Проверяем статус ответа
+        if response.status_code == 200:
+            # Если успешно, обновляем список изображений в сессии
+            response_data = response.json()
+            new_filenames = response_data.get('filenames', [])
+            session.setdefault('images', []).extend(new_filenames)
+            return jsonify(success=True, filenames=new_filenames)
+        else:
+            # Если произошла ошибка, возвращаем её
+            logger.error(f'Ошибка при загрузке файлов: {response.text}')
+            return jsonify(error='Failed to upload files'), response.status_code
+    except Exception as e:
+        # Обрабатываем исключения (например, если микросервис недоступен)
+        logger.error(f'Ошибка при отправке запроса на image_processing: {str(e)}')
+        return jsonify(error='Internal server error'), 500
 
 
 @app.route('/remove_image', methods=['POST'])
@@ -232,12 +237,6 @@ def generate_gif():
     else:
         logger.error(f'Ошибка при создании GIF: {response.text}')
         return jsonify(error='Failed to generate GIF'), 500
-
-
-@app.before_request
-def set_session_id():
-    if 'session_id' not in session:
-        session['session_id'] = request.headers.get('X-Session-ID', str(uuid.uuid4()))
 
 
 if __name__ == '__main__':

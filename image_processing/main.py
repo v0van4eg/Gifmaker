@@ -24,7 +24,7 @@ def allowed_file(filename):
 @app.route('/upload', methods=['POST'])
 def upload():
     logger.info("@@@ Мы внутри контейнера image_processing/upload")
-    session_id = request.headers.get('session_id')
+    session_id = session.get('session_id')
     # Получаем session_id из запроса
     if not session_id:
         return jsonify(error='Session ID not found'), 400
@@ -63,10 +63,10 @@ def upload():
 def reorder_images():
     logger.info("Мы внутри image_processing/reorder_images")
     logger.info("Выполняю перестановку изображений")
-    session_id = request.headers.get('X-Session-ID')  # Получаем session_id из запроса
+    session_id = session.get('session_id')
     # if not session_id:
     #     session_id = request.headers.get('X-Session-ID')  # Пытаемся получить из заголовков
-    logger.info(f'Плолученный из header Session ID: {session_id}')
+    logger.info(f'Плолученный Session ID: {session_id}')
     image_order = request.form.get('image_order')
     if not image_order:
         return jsonify(error='Image order not provided'), 400
