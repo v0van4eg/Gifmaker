@@ -21,8 +21,8 @@ services:
       - ./uploads:/app/uploads
       - ./static_files:/app/static
       - ./templates:/app/templates
-#    environment:
-#      SESSION_COOKIE_DOMAIN: localhost
+    environment:
+      SESSION_COOKIE_DOMAIN: cloud
     ports:
       - "5000:5000"
 

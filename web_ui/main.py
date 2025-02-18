@@ -1,5 +1,5 @@
 # web_ui/main.py
-
+import time
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask import send_from_directory
 import os
@@ -29,29 +29,12 @@ def clean_uploads():
     logger.info('Проверяем наличие папки uploads...')
     if os.path.exists(uploads_root):
         logger.info('Очищаем старые загрузки...')
-
-        # Проверяем, является ли uploads_root символической ссылкой
-        if os.path.islink(uploads_root):
-            logger.info(f'{uploads_root} является символической ссылкой.')
-            # Получаем реальный путь, на который указывает ссылка
-            real_path = os.path.realpath(uploads_root)
-            logger.info(f'Реальный путь: {real_path}')
-
-            # Очищаем содержимое реального каталога
-            for item in os.listdir(real_path):
-                item_path = os.path.join(real_path, item)
-                if os.path.isdir(item_path):
-                    shutil.rmtree(item_path)  # Рекурсивно удаляем директорию и её содержимое
-                else:
-                    os.remove(item_path)  # Удаляем файл
-        else:
-            # Если это не символическая ссылка, обрабатываем как обычный каталог
-            for item in os.listdir(uploads_root):
-                item_path = os.path.join(uploads_root, item)
-                if os.path.isdir(item_path):
-                    shutil.rmtree(item_path)  # Рекурсивно удаляем директорию и её содержимое
-                else:
-                    os.remove(item_path)  # Удаляем файл
+        for item in os.listdir(uploads_root):
+            item_path = os.path.join(uploads_root, item)
+            if os.path.isdir(item_path):
+                shutil.rmtree(item_path)  # Рекурсивно удаляем директорию и её содержимое
+            else:
+                os.remove(item_path)  # Удаляем файл
 
 
 clean_uploads()
@@ -71,15 +54,18 @@ def get_session_id():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    # clean_uploads()
     logger.info('Переход на главную страницу...')
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
     session_id = session['session_id']
-    logger.info(f'Получем session_id={session_id}')
+    logger.info(f'Извлекаем session_id={session_id}')
     upload_folder = os.path.join(uploads_root, session_id)
     logger.info(f'Создаём папку upload_folder={upload_folder}')
-    os.makedirs(upload_folder, exist_ok=True)
+
+    # Проверяем существование папки перед созданием
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder, exist_ok=True)
+
     images = session.get('images', [])
     gif_file = os.path.join(upload_folder, 'animation.gif')
 
@@ -118,12 +104,105 @@ def new_session():
     return redirect(url_for('index'))
 
 
-@app.route('/uploads/<path:filename>')
+@app.route('/uploads/<filename>')
 def get_uploaded_file(filename):
     session_id = session.get('session_id')
     if not session_id:
         return "Session ID not found", 404
     return send_from_directory(os.path.join(uploads_root, session_id), filename)
+
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    logger.info("@@@ Мы внутри контейнера image_processing/upload")
+    session_id = request.headers.get('X-Session-ID')
+    # Получаем session_id из запроса
+    if not session_id:
+        return jsonify(error='Session ID not found'), 400
+    logger.info(f'Session ID через request form: {session_id}')
+    upload_folder = os.path.join(uploads_root, session_id)
+
+    # Проверяем существование папки перед созданием
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder, exist_ok=True)
+
+    files = request.files.getlist('files')
+    if not files:
+        return jsonify(error='No selected files'), 400
+    new_filenames = []
+    for file in files:
+        if file and allowed_file(file.filename):
+            unix_time = int(time.time())
+            original_filename = secure_filename(file.filename)
+            unique_id = str(uuid.uuid4())[:8]
+            filename = f"IMG_{unix_time}_{unique_id}_{original_filename}"
+            logger.info(f"Filename: {filename}")
+            file_path = os.path.join(upload_folder, filename)
+            logger.info(f"File path: {file_path}")
+            try:
+                file.save(file_path)
+                logger.info(f"Saved file {filename} to {file_path}")
+                new_filenames.append(filename)
+            except Exception as e:
+                return jsonify(error=f'Failed to save file: {str(e)}'), 500
+    return jsonify(success=True, filenames=new_filenames)
+
+
+@app.route('/remove_image', methods=['POST'])
+def remove_image():
+    session_id = session.get('session_id')
+    logger.info(f"@@@ Маршрут Remove Image. Отправляем Session ID из web_ui: {session_id}")
+    try:
+        image_name = request.form.get('image_name')
+        if not image_name:
+            return jsonify({'success': False, 'message': 'Имя файла не указано'}), 400
+
+        # Отправляем запрос к микросервису image_processing
+        response = requests.post(f'http://image_processing:5001/remove_image',
+                                 headers={'X-Session-ID': session_id},
+                                 data={'image_name': image_name})
+
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        else:
+            return jsonify({'success': False, 'message': response.text}), response.status_code
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/reorder_images', methods=['POST'])
+def reorder_images():
+    session_id = session.get('session_id')
+    if not session_id:
+        return jsonify(success=False, error='Session ID not found'), 400
+
+    image_order = request.form.get('image_order')
+    logger.info(f'Получен image_order!!!!!!!!!!:  {image_order}')
+
+    if not image_order:
+        return jsonify(success=False, error='Image order not provided'), 400
+
+    # Логирование для отладки
+    logger.info(f'Received image_order: {image_order}')
+
+    # Преобразуем строку image_order в список
+    image_order_list = image_order.split(',')
+
+    # Отправляем запрос в image_processing для изменения порядка изображений
+    reorder_url = 'http://image_processing:5001/reorder_images'
+    logger.info(f'Отправляем image_order: {image_order}')
+
+    response = requests.post(reorder_url,
+                             headers={'X-Session-ID': session_id},
+                             data={'image_order': ','.join(image_order_list)})
+
+    if response.status_code == 200:
+        # Обновляем порядок изображений в сессии
+        session['images'] = image_order_list
+        return jsonify(success=True)
+    else:
+        logger.error(f'Error reordering images: {response.text}')
+        return jsonify(success=False, error='Failed to reorder images'), response.status_code
 
 
 @app.route('/generate_gif', methods=['POST'])
@@ -141,13 +220,12 @@ def generate_gif():
     resize = request.form.get('resize')
     logger.info(f'resize={resize}')
     generate_url = 'http://gif_generator:5002/generate_gif'
-    response = requests.post(generate_url, data={
-        'session_id': session_id,
+    headers = {'X-Session-ID': session_id}
+    response = requests.post(generate_url, headers=headers, data={
         'duration': duration,
         'loop': loop,
         'resize': resize
     })
-    print(response.status_code)
     if response.status_code == 200:
         return redirect(url_for('index'))
     else:
@@ -155,80 +233,10 @@ def generate_gif():
         return jsonify(error='Failed to generate GIF'), 500
 
 
-@app.route('/upload', methods=['POST'])
-def upload():
-    session_id = session.get('session_id')
-    logger.info(f"@@@ Маршрут Upload. Session ID in web_ui: {session_id}")
-    files = request.files.getlist('files')
-    if not files:
-        return redirect(url_for('index'))
-    upload_url = 'http://image_processing:5001/upload'
-    data = {'session_id': session_id}
-    files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
-    response = requests.post(upload_url, data=data, files=files_data)
-    if response.status_code == 200:
-        response_data = response.json()
-        new_filenames = response_data.get('filenames', [])
-        session.setdefault('images', []).extend(new_filenames)
-    return redirect(url_for('index'))
-
-
-# маршруты для манипуляций с файлами
-@app.route('/remove_image', methods=['POST'])
-def remove_image():
-    session_id = session.get('session_id')
-    logger.info(f"@@@ Маршрут Remove Image. Session ID in web_ui: {session_id}")
-    try:
-        image_name = request.form.get('image_name')
-        if not image_name:
-            return jsonify({'success': False, 'message': 'Имя файла не указано'}), 400
-
-        # Отправляем запрос к микросервису image_processing
-        response = requests.post(f'http://image_processing:5001/remove_image',
-                                 data={'session_id': session_id, 'image_name': image_name})
-
-        if response.status_code == 200:
-            return jsonify(response.json()), 200
-        else:
-            return jsonify({'success': False, 'message': response.text}), response.status_code
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@app.route('/reorder_images', methods=['POST'])
-def reorder_images():
-    session_id = session.get('session_id')
-    if not session_id:
-        return jsonify(success=False, error='Session ID not found'), 400
-
-    image_order = request.form.get('image_order')
-    logger.info(f'Получен image_order!!!!!!!!!!: {image_order}')
-
-    if not image_order:
-        return jsonify(success=False, error='Image order not provided'), 400
-
-    # Логирование для отладки
-    logger.info(f'Received image_order: {image_order}')
-
-    # Преобразуем строку image_order в список
-    image_order_list = image_order.split(',')
-
-    # Отправляем запрос в image_processing для изменения порядка изображений
-    reorder_url = 'http://image_processing:5001/reorder_images'
-    logger.info(f'Отправляем image_order: {image_order}')
-
-    response = requests.post(reorder_url, data={
-        'session_id': session_id,
-        'image_order': ','.join(image_order_list)  # Убедимся, что передаем строку
-    })
-
-    if response.status_code == 200:
-        # Обновляем порядок изображений в сессии
-        session['images'] = image_order_list
-        return jsonify(success=True)
-    else:
-        logger.error(f'Error reordering images: {response.text}')
-        return jsonify(success=False, error='Failed to reorder images'), response.status_code
+@app.before_request
+def set_session_id():
+    if 'session_id' not in session:
+        session['session_id'] = request.headers.get('X-Session-ID', str(uuid.uuid4()))
 
 
 if __name__ == '__main__':

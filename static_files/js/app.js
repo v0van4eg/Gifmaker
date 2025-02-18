@@ -1,5 +1,16 @@
+// static_files/js/app.js
+
 $(function () {
     const dropArea = document.getElementById('drop-area');
+
+    // Получаем session_id из localStorage или создаем новый
+    let session_id = localStorage.getItem('session_id');
+    if (!session_id) {
+        $.getJSON('/get_session_id', function(data) {
+            session_id = data.session_id;
+            localStorage.setItem('session_id', session_id);
+        });
+    }
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, preventDefaults, false);
@@ -11,7 +22,7 @@ $(function () {
     }
 
     ['dragenter', 'dragover'].forEach(eventName => {
-        dropArea.addEventListener(eventName, highlight, false);
+        dropArea.addEventListener(eventName, highlight, false); 
     });
     ['dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, unhighlight, false);
@@ -39,6 +50,7 @@ $(function () {
 
     function uploadFiles(files) {
         let formData = new FormData();
+        formData.append('session_id', session_id);  // Добавляем session_id
         for (let i = 0; i < files.length; i++) {
             formData.append('files', files[i]);
         }
@@ -48,6 +60,7 @@ $(function () {
             data: formData,
             contentType: false,
             processData: false,
+            headers: { 'X-Session-ID': session_id },  // Прокидываем session_id
             success: function () {
                 location.reload();
             },
@@ -73,6 +86,7 @@ $(function () {
                 $.ajax({
                     url: '/reorder_images',
                     type: 'POST',
+                    headers: { 'X-Session-ID': session_id }, // Добавляем session_id в заголовок
                     data: { image_order: imageOrderString },
                     contentType: 'application/x-www-form-urlencoded',
                     success: function (response) {
@@ -92,7 +106,6 @@ $(function () {
         });
     }
 
-
     $('#upload-form input[type="file"]').on('change', function () {
         let formData = new FormData();
         $.each(this.files, function (_, file) {
@@ -104,6 +117,7 @@ $(function () {
             data: formData,
             contentType: false,
             processData: false,
+            headers: { 'X-Session-ID': session_id },
             success: function () {
                 location.reload();
             },
@@ -118,11 +132,18 @@ $(function () {
         let imageName = $(this).data('image');
         let imageWrapper = $(this).closest('.image-wrapper');
 
-        $.post('/remove_image', {image_name: imageName}, function () {
-            imageWrapper.remove();
-        }).fail(function (xhr, status, error) {
-            console.error('Ошибка удаления изображения:', error);
-            alert('Ошибка удаления изображения: ' + error);
+        $.ajax({
+            url: '/remove_image',
+            type: 'POST',
+            headers: { 'X-Session-ID': session_id }, // Добавляем session_id в заголовок
+            data: { image_name: imageName },
+            success: function () {
+                imageWrapper.remove();
+            },
+            fail: function (xhr, status, error) {
+                console.error('Ошибка удаления изображения:', error);
+                alert('Ошибка удаления изображения: ' + error);
+            }
         });
     });
 
@@ -135,6 +156,7 @@ $(function () {
         $.ajax({
             url: '/generate_gif',
             type: 'POST',
+            headers: { 'X-Session-ID': session_id }, // Добавляем session_id в заголовок
             data: formData,
             contentType: false,
             processData: false,
@@ -165,7 +187,12 @@ $(function () {
         $('#image-container').html(images);
 
         let imageOrder = images.map(img => img.id);
-        $.post('/reorder_images', {image_order: imageOrder.join(',')});
+        $.ajax({
+            url: '/reorder_images',
+            type: 'POST',
+            headers: { 'X-Session-ID': session_id }, // Добавляем session_id в заголовок
+            data: { image_order: imageOrder.join(',') }
+        });
     });
 
     attachDraggableAndSortable();
