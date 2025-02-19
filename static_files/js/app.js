@@ -200,9 +200,14 @@ $(function () {
                 }, false);
                 return xhr;
             },
-            success: function () {
+            success: function (response) {
                 $('#progress-container').hide();
-                updateImageList(); // Обновляем список изображений без перезагрузки страницы
+                if (response.success) {
+                    let gifUrl = response.gif_url;
+                    $('#gif-container').html(`<img id="gif-image" src="${gifUrl}" alt="Generated GIF">`);
+                } else {
+                    alert('Ошибка генерации GIF: ' + response.error);
+                }
             },
             error: function (xhr, status, error) {
                 console.error('Ошибка генерации GIF:', error);
@@ -211,7 +216,6 @@ $(function () {
             }
         });
     });
-
     $('#reverse-order-btn').on('click', function () {
         let images = $('#image-container .image-wrapper').toArray().reverse();
         $('#image-container').html(images);

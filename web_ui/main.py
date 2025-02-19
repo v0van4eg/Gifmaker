@@ -360,7 +360,12 @@ def generate_gif():
 
     response = requests.post(generate_url, headers=headers, data=data)
     if response.status_code == 200:
-        return redirect(url_for('index'))
+        response_data = response.json()
+        gif_url = response_data.get('gif_url')
+        if gif_url:
+            return jsonify(success=True, gif_url=gif_url)
+        else:
+            return jsonify(success=False, error='GIF URL not found in response'), 500
     else:
         logger.error(f'Ошибка при создании GIF: {response.text}')
         return jsonify(error='Failed to generate GIF'), 500
