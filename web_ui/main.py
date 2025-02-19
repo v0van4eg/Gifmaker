@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 import requests
 import logging
 import shutil
+import json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,8 +48,6 @@ def clean_uploads():
                 os.remove(item_path)  # Удаляем файл
 
 
-clean_uploads()
-
 @app.route('/get_images', methods=['GET'])
 def get_images():
     session_id = session.get('session_id')
@@ -57,13 +56,31 @@ def get_images():
 
     upload_folder = os.path.join(uploads_root, session_id)
     images = []
-    if os.path.exists(upload_folder):
-        for f in os.listdir(upload_folder):
-            file_path = os.path.join(upload_folder, f)
-            if os.path.isfile(file_path) and allowed_file(f) and f != 'animation.gif':
-                images.append(f)
 
+    if os.path.exists(upload_folder):
+        # Получаем сохраненный порядок изображений из сессии
+        image_order = session.get('images', {})
+
+        # Если порядок изображений сохранен, используем его
+        if image_order:
+            # Проверяем, является ли image_order словарем
+            if isinstance(image_order, list):
+                # Преобразуем список в словарь
+                image_order = {idx + 1: image_name for idx, image_name in enumerate(image_order)}
+                session['images'] = image_order  # Обновляем сессию словарем
+
+            # Сортируем изображения по сохраненному порядку
+            sorted_images = sorted(image_order.items(), key=lambda x: int(x[0]))
+            images = [image_name for _, image_name in sorted_images]
+        else:
+            # Если порядок не сохранен, собираем изображения из папки
+            for f in os.listdir(upload_folder):
+                file_path = os.path.join(upload_folder, f)
+                if os.path.isfile(file_path) and allowed_file(f) and f != 'animation.gif':
+                    images.append(f)
+    logger.info(f'Получен список изображений: {images}')
     return jsonify(images=images)
+
 
 @app.route('/get_session_id', methods=['GET'])
 def get_session_id():
@@ -270,7 +287,7 @@ def reorder_images():
         return jsonify(success=False, error='Image order not provided'), 400
 
     # Преобразуем строку image_order в словарь
-    image_order_dict = {str(idx + 1): filename for idx, filename in enumerate(image_order.split(','))}
+    image_order_dict = json.loads(image_order)
     logger.info(f'Received image_order: {image_order_dict}')
 
     # Отправляем запрос в image_processing для изменения порядка изображений
@@ -283,7 +300,7 @@ def reorder_images():
 
     if response.status_code == 200:
         # Обновляем порядок изображений в сессии
-        session['images'] = image_order_dict
+        session['images'] = image_order_dict  # Убедимся, что сохраняем словарь
         return jsonify(success=True)
     else:
         logger.error(f'Error reordering images: {response.text}')
@@ -328,4 +345,5 @@ def generate_gif():
 
 
 if __name__ == '__main__':
+    clean_uploads()
     app.run(debug=True, host='0.0.0.0', port=5000)

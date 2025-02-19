@@ -192,18 +192,30 @@ $(function () {
     $(document).on('click', '.remove-btn', function () {
         let imageName = $(this).closest('.image-wrapper').find('img').attr('src').split('/').pop();
         let imageWrapper = $(this).closest('.image-wrapper');
+        let removeButton = $(this); // Сохраняем ссылку на кнопку
+
+        removeButton.prop('disabled', true); // Отключаем кнопку
 
         $.ajax({
             url: '/remove_image',
             type: 'POST',
             headers: { 'X-Session-ID': session_id },
             data: { image_name: imageName },
-            success: function () {
-                imageWrapper.remove();
+            success: function (response) {
+                if (response.success) {
+                    imageWrapper.remove(); // Удаляем элемент из DOM
+                    updateImageList(); // Обновляем список изображений
+                } else {
+                    console.error('Ошибка удаления изображения:', response.message);
+                    alert('Ошибка удаления изображения: ' + response.message);
+                }
             },
             error: function (xhr, status, error) {
                 console.error('Ошибка удаления изображения:', error);
                 alert('Ошибка удаления изображения: ' + error);
+            },
+            complete: function() {
+                removeButton.prop('disabled', false); // Включаем кнопку снова
             }
         });
     });
@@ -273,5 +285,11 @@ $(function () {
         });
     });
 
+    // Определяем функцию attachDraggableAndSortable
+    function attachDraggableAndSortable() {
+        makeImagesDraggable();
+    }
+
+    // Вызываем функцию после загрузки страницы
     attachDraggableAndSortable();
 });

@@ -7,6 +7,7 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 import logging
+import json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -87,14 +88,14 @@ def reorder_images():
         return jsonify(error='Image order not provided'), 400
 
     image_order = json.loads(image_order_json)
+    logger.info(f'Полученный порядок изображений: {image_order}')
     upload_folder = os.path.join(uploads_root, session_id)
-    logger.info(f'Полученный порядок файлов: {image_order}')
 
     temp_renames = {}
     try:
         for idx, image_name in sorted(image_order.items(), key=lambda x: int(x[0])):
             old_path = os.path.join(upload_folder, image_name)
-            new_path = os.path.join(upload_folder, f'temp_{idx:04d}_{image_name}')
+            new_path = os.path.join(upload_folder, f'temp_{int(idx):04d}_{image_name}')  # Преобразуем idx в целое число
             if os.path.isfile(old_path):
                 os.rename(old_path, new_path)
                 temp_renames[new_path] = old_path
@@ -106,6 +107,7 @@ def reorder_images():
             final_path = os.path.join(upload_folder, os.path.basename(old_path))
             os.rename(new_path, final_path)
             logger.info(f"Renamed {new_path} to {final_path}")
+        logger.info(f'Новый порядок изображений: {image_order}')
 
     except Exception as e:
         logger.error(f"Ошибка при перестановке изображений: {e}")
