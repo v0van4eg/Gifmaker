@@ -1,6 +1,6 @@
 # web_ui/main.py
 import time
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, json
 from flask import send_from_directory
 import os
 import uuid
@@ -49,6 +49,21 @@ def clean_uploads():
 
 clean_uploads()
 
+@app.route('/get_images', methods=['GET'])
+def get_images():
+    session_id = session.get('session_id')
+    if not session_id:
+        return jsonify(error='Session ID not found'), 400
+
+    upload_folder = os.path.join(uploads_root, session_id)
+    images = []
+    if os.path.exists(upload_folder):
+        for f in os.listdir(upload_folder):
+            file_path = os.path.join(upload_folder, f)
+            if os.path.isfile(file_path) and allowed_file(f) and f != 'animation.gif':
+                images.append(f)
+
+    return jsonify(images=images)
 
 @app.route('/get_session_id', methods=['GET'])
 def get_session_id():
@@ -244,13 +259,6 @@ def remove_image():
 
 @app.route('/reorder_images', methods=['POST'])
 def reorder_images():
-    """
-    Переупорядочивает загруженные изображения.
-    Входные параметры:
-    - image_order: Новый порядок изображений
-    Возвращает:
-    - JSON с успешным статусом или сообщением об ошибке
-    """
     session_id = session.get('session_id')
     if not session_id:
         return jsonify(success=False, error='Session ID not found'), 400
@@ -261,23 +269,21 @@ def reorder_images():
     if not image_order:
         return jsonify(success=False, error='Image order not provided'), 400
 
-    # Логирование для отладки
-    logger.info(f'Received image_order: {image_order}')
-
-    # Преобразуем строку image_order в список
-    image_order_list = image_order.split(',')
+    # Преобразуем строку image_order в словарь
+    image_order_dict = {str(idx + 1): filename for idx, filename in enumerate(image_order.split(','))}
+    logger.info(f'Received image_order: {image_order_dict}')
 
     # Отправляем запрос в image_processing для изменения порядка изображений
     reorder_url = 'http://image_processing:5001/reorder_images'
-    logger.info(f'Отправляем image_order: {image_order}')
+    logger.info(f'Отправляем image_order: {image_order_dict}')
 
     response = requests.post(reorder_url,
                              headers={'X-Session-ID': session_id},
-                             data={'image_order': ','.join(image_order_list)})
+                             data={'image_order': json.dumps(image_order_dict)})
 
     if response.status_code == 200:
         # Обновляем порядок изображений в сессии
-        session['images'] = image_order_list
+        session['images'] = image_order_dict
         return jsonify(success=True)
     else:
         logger.error(f'Error reordering images: {response.text}')

@@ -78,31 +78,21 @@ def upload():
 # Перестановка изображений
 @app.route('/reorder_images', methods=['POST'])
 def reorder_images():
-    """
-    Переупорядочивает загруженные изображения.
-
-    Входные параметры:
-    - X-Session-ID: Идентификатор сессии (передается в заголовках)
-    - image_order: Новый порядок изображений
-
-    Возвращает:
-    - JSON с успешным статусом или сообщением об ошибке
-    """
     logger.info("Мы внутри image_processing/reorder_images")
     logger.info("Выполняю перестановку изображений")
     session_id = request.headers.get('X-Session-ID')
     logger.info(f'Полученный Session ID: {session_id}')
-    image_order = request.form.get('image_order')
-    if not image_order:
+    image_order_json = request.form.get('image_order')
+    if not image_order_json:
         return jsonify(error='Image order not provided'), 400
 
-    image_order = image_order.split(',')
+    image_order = json.loads(image_order_json)
     upload_folder = os.path.join(uploads_root, session_id)
     logger.info(f'Полученный порядок файлов: {image_order}')
 
     temp_renames = {}
     try:
-        for idx, image_name in enumerate(image_order):
+        for idx, image_name in sorted(image_order.items(), key=lambda x: int(x[0])):
             old_path = os.path.join(upload_folder, image_name)
             new_path = os.path.join(upload_folder, f'temp_{idx:04d}_{image_name}')
             if os.path.isfile(old_path):
@@ -118,16 +108,15 @@ def reorder_images():
             logger.info(f"Renamed {new_path} to {final_path}")
 
     except Exception as e:
-        logger.error(f"Error during reordering images: {e}")
+        logger.error(f"Ошибка при перестановке изображений: {e}")
         # Если возникла ошибка, попытаться вернуть файлы в исходное состояние
         for new_path, old_path in temp_renames.items():
             if os.path.isfile(new_path):
                 os.rename(new_path, old_path)
-                logger.info(f"Reverted {new_path} to {old_path}")
-        return jsonify(error='Failed to reorder images'), 500
+                logger.info(f"Восстановлен {new_path} в {old_path}")
+        return jsonify(error='Не удалось переставить изображения'), 500
 
     return jsonify(success=True)
-
 
 # Удаление изображения
 @app.route('/remove_image', methods=['POST'])

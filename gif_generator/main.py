@@ -17,18 +17,6 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
-    """
-    Генерирует GIF из загруженных изображений.
-
-    Входные параметры:
-    - X-Session-ID: Идентификатор сессии (передается в заголовках)
-    - duration: Длительность кадра в миллисекундах (по умолчанию 200)
-    - loop: Количество циклов воспроизведения GIF (по умолчанию 0)
-    - resize: Новые размеры изображений в формате "ШxВ"
-
-    Возвращает:
-    - JSON с URL сгенерированного GIF или сообщение об ошибке
-    """
     logger.info(f"@@@ Мы внутри Запускаем генератор GIF")
     session_id = request.headers.get('X-Session-ID')
     logger.info(f'Session ID через request header: {session_id}')
@@ -44,7 +32,8 @@ def generate_gif():
     resize = request.form.get('resize')
     logger.info(f'Resize: {resize}')
     images = []
-    for image_name in os.listdir(upload_folder):
+    for image_name in sorted(os.listdir(upload_folder),
+                             key=lambda x: int(x.split('_')[0]) if x.startswith('IMG_') else float('inf')):
         try:
             image_path = os.path.join(upload_folder, image_name)
             img = Image.open(image_path)
@@ -54,7 +43,7 @@ def generate_gif():
                 img = img.resize((width, height), Image.LANCZOS)
             images.append(np.array(img))
         except Exception as e:
-            print(f"Error processing image {image_name}: {e}")
+            print(f"Ошибка при обработке изображения {image_name}: {e}")
             continue
     if not images:
         return jsonify(error='No valid images uploaded'), 400
@@ -63,8 +52,8 @@ def generate_gif():
             for img in images:
                 writer.append_data(img)
     except Exception as e:
-        print(f"Error generating GIF: {e}")
-        return jsonify(error='Error generating GIF'), 500
+        print(f"Ошибка при генерации GIF: {e}")
+        return jsonify(error='Ошибка при генерации GIF'), 500
     return jsonify(success=True, gif_url=f'/static/uploads/{session_id}/animation.gif')
 
 
