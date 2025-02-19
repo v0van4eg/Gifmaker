@@ -19,7 +19,7 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 def generate_gif():
     logger.info(f"@@@ Мы внутри Запускаем генератор GIF")
 #    session_id = request.form.get('session_id')
-    session_id = session.get('session_id')
+    session_id = request.headers.get('X-Session-ID')
     logger.info(f'Session ID через request header: {session_id}')
     if not session_id:
         return jsonify(error='Session ID not found'), 400

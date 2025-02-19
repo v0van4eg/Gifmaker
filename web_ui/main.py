@@ -55,18 +55,31 @@ def get_session_id():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     logger.info('Переход на главную страницу...')
+
+    # Проверяем, есть ли session_id в сессии
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
+        logger.info(f'Создан новый session_id={session["session_id"]}')
+
+        # Создаем папку для загрузки только при инициализации новой сессии
+        upload_folder = os.path.join(uploads_root, session['session_id'])
+        if not os.path.exists(upload_folder):
+            try:
+                os.makedirs(upload_folder, exist_ok=True)
+                logger.info(f'Папка успешно создана: {upload_folder}')
+            except Exception as e:
+                logger.error(f'Ошибка при создании папки: {e}')
+                return jsonify(error='Failed to create upload directory'), 500
+
     session_id = session['session_id']
-    logger.info(f'Извлекаем session_id={session_id}')
+    logger.info(f'Используем session_id={session_id}')
+
+    # Получаем список изображений из папки загрузки
     upload_folder = os.path.join(uploads_root, session_id)
-    logger.info(f'Создаём папку upload_folder={upload_folder}')
+    images = []
+    if os.path.exists(upload_folder):
+        images = [f for f in os.listdir(upload_folder) if os.path.isfile(os.path.join(upload_folder, f))]
 
-    # Проверяем существование папки перед созданием
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder, exist_ok=True)
-
-    images = session.get('images', [])
     gif_file = os.path.join(upload_folder, 'animation.gif')
 
     if request.method == 'POST':
@@ -76,7 +89,7 @@ def index():
                 filename = secure_filename(file.filename)  # Безопасное имя файла
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
-                session.setdefault('images', []).append(filename)
+                images.append(filename)
 
     return render_template('index.html', images=images, gif_file=gif_file if os.path.exists(gif_file) else None)
 
@@ -119,7 +132,7 @@ def upload():
     # Получаем session_id из сессии
     session_id = session.get('session_id')
     if not session_id:
-        return jsonify(error='Session ID not found'), 400
+        return jsonify(error='Session ID не найден'), 400
 
     logger.info(f'Session ID: {session_id}')
 
@@ -130,26 +143,23 @@ def upload():
 
     # Подготавливаем данные для отправки на image_processing
     upload_url = 'http://image_processing:5001/upload'
-    data = {'session_id': session_id}
+    headers = {'X-Session-ID': session_id}
     files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
 
     try:
         # Отправляем запрос на image_processing
-        response = requests.post(upload_url, data=data, files=files_data)
+        response = requests.post(upload_url, files=files_data, headers=headers)
 
         # Проверяем статус ответа
         if response.status_code == 200:
-            # Если успешно, обновляем список изображений в сессии
             response_data = response.json()
             new_filenames = response_data.get('filenames', [])
             session.setdefault('images', []).extend(new_filenames)
             return jsonify(success=True, filenames=new_filenames)
         else:
-            # Если произошла ошибка, возвращаем её
             logger.error(f'Ошибка при загрузке файлов: {response.text}')
             return jsonify(error='Failed to upload files'), response.status_code
     except Exception as e:
-        # Обрабатываем исключения (например, если микросервис недоступен)
         logger.error(f'Ошибка при отправке запроса на image_processing: {str(e)}')
         return jsonify(error='Internal server error'), 500
 

@@ -23,38 +23,26 @@ def allowed_file(filename):
 # Загрузка изображений
 @app.route('/upload', methods=['POST'])
 def upload():
-    logger.info("@@@ Мы внутри контейнера image_processing/upload")
-    session_id = session.get('session_id')
-    # Получаем session_id из запроса
+    session_id = request.headers.get('X-Session-ID')
     if not session_id:
-        return jsonify(error='Session ID not found'), 400
-    logger.info(f'Session ID через request form: {session_id}')
+        return jsonify(error='Session ID not in headers. not found'), 400
+    logger.info(f'Плолученный Session  {session_id}')
     upload_folder = os.path.join(uploads_root, session_id)
-
-    # Проверяем существование папки перед созданием
     if not os.path.exists(upload_folder):
-        logger.info(f"Каталог {upload_folder} не существует")
+        os.makedirs(upload_folder)
 
     files = request.files.getlist('files')
     if not files:
         return jsonify(error='No selected files'), 400
+
     new_filenames = []
     for file in files:
         if file and allowed_file(file.filename):
-            unix_time = int(time.time())
-            original_filename = secure_filename(file.filename)
-            unique_id = str(uuid.uuid4())[:8]
-            filename = f"IMG_{unix_time}_{unique_id}_{original_filename}"
-            logger.info(f"Filename: {filename}")
+            filename = secure_filename(file.filename)
             file_path = os.path.join(upload_folder, filename)
-            logger.info(f"File path: {file_path}")
-            try:
-                file.save(file_path)
-                logger.info(f"Saved file {filename} to {file_path}")
-                new_filenames.append(filename)
-            except Exception as e:
-                logger.error(f"Error saving file {filename}: {str(e)}")
-                return jsonify(error=f'Failed to save file: {str(e)}'), 500
+            file.save(file_path)
+            new_filenames.append(filename)
+
     return jsonify(success=True, filenames=new_filenames)
 
 
@@ -63,7 +51,7 @@ def upload():
 def reorder_images():
     logger.info("Мы внутри image_processing/reorder_images")
     logger.info("Выполняю перестановку изображений")
-    session_id = session.get('session_id')
+    session_id = request.headers.get('X-Session-ID')
     # if not session_id:
     #     session_id = request.headers.get('X-Session-ID')  # Пытаемся получить из заголовков
     logger.info(f'Плолученный Session ID: {session_id}')

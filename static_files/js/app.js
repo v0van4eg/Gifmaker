@@ -50,7 +50,6 @@ $(function () {
 
     function uploadFiles(files) {
         let formData = new FormData();
-        formData.append('session_id', session_id);  // Добавляем session_id
         for (let i = 0; i < files.length; i++) {
             formData.append('files', files[i]);
         }
@@ -60,6 +59,7 @@ $(function () {
             data: formData,
             contentType: false,
             processData: false,
+            headers: { 'X-Session-ID': session_id }, // <-- добавь сюда
             success: function () {
                 location.reload();
             },
