@@ -1,3 +1,4 @@
+/* static_files/css/styles.css */
 body {
     font-family: 'Arial', sans-serif;
     margin: 0;
@@ -123,7 +124,6 @@ input[type="text"]:focus {
     text-align: center;
     box-sizing: border-box;
 }
-
 #gif-image {
     width: 100%;
     max-width: 100%;
@@ -139,14 +139,12 @@ input[type="text"]:focus {
     padding-right: 20px;
     box-sizing: border-box;
 }
-
 .right-column {
     width: 25%;
     padding-left: 20px;
     box-sizing: border-box;
     max-width: 100%; /* Ограничение по ширине */
 }
-
 #progress-container {
     width: 100%;
     background-color: #ddd;
@@ -163,7 +161,6 @@ input[type="text"]:focus {
     color: white;
     transition: width 0.5s ease-in-out;
 }
-
 @media (max-width: 768px) {
     main {
         flex-direction: column;

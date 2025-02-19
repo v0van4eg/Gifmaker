@@ -37,17 +37,19 @@ def upload():
         return jsonify(error='No selected files'), 400
     new_filenames = []
     for file in files:
+        logger.info(f'Файл: {file.filename}')
         if file and allowed_file(file.filename):
             unix_time = int(time.time())
             original_filename = secure_filename(file.filename)
             unique_id = str(uuid.uuid4())[:8]
             filename = f"IMG_{unix_time}_{unique_id}_{original_filename}"
-            logger.info(f"Filename: {filename}")
+            logger.info(f"Старое имя файла: {original_filename}")
+            logger.info(f"Новое имя файла: {filename}")
             file_path = os.path.join(upload_folder, filename)
-            logger.info(f"File path: {file_path}")
+            logger.info(f"Путь к файлу: {file_path}")
             try:
                 file.save(file_path)
-                logger.info(f"Saved file {filename} to {file_path}")
+                logger.info(f"Файл {filename} сохранён в {file_path}")
                 new_filenames.append(filename)
             except Exception as e:
                 return jsonify(error=f'Failed to save file: {str(e)}'), 500
@@ -60,8 +62,6 @@ def reorder_images():
     logger.info("Мы внутри image_processing/reorder_images")
     logger.info("Выполняю перестановку изображений")
     session_id = request.headers.get('X-Session-ID')
-    # if not session_id:
-    #     session_id = request.headers.get('X-Session-ID')  # Пытаемся получить из заголовков
     logger.info(f'Плолученный Session ID: {session_id}')
     image_order = request.form.get('image_order')
     if not image_order:
@@ -70,6 +70,7 @@ def reorder_images():
     image_order = image_order.split(',')
     upload_folder = os.path.join(uploads_root, session_id)
     logger.info(f'Полученный порядок файлов: {image_order}')
+
     for idx, image_name in enumerate(image_order):
         old_path = os.path.join(upload_folder, image_name)
         new_path = os.path.join(upload_folder, f'{idx:04d}_{image_name}')
@@ -91,7 +92,6 @@ def reorder_images():
 @app.route('/remove_image', methods=['POST'])
 def remove_image():
     logger.info("Мы внутри image_processing/remove_image\nВыполняю удаление изображения")
-    #    session_id = request.form.get('session_id')  # Получаем session_id из запроса
     session_id = request.headers.get('X-Session-ID')  # Получаем session_id из заголовков
 
     if not session_id:

@@ -27,7 +27,6 @@ def load_gitignore_rules(startpath):
     # Добавляем правило для игнорирования __pycache__
     ignore_rules.append("__pycache__")
     ignore_rules.append("__init__.py")
-    ignore_rules.append("monolit_main.py")
     ignore_rules.append("create_src.py")
     return ignore_rules
 
