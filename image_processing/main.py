@@ -26,23 +26,31 @@ def upload():
     session_id = request.headers.get('X-Session-ID')
     if not session_id:
         return jsonify(error='Session ID not in headers. not found'), 400
-    logger.info(f'Плолученный Session  {session_id}')
+    logger.info(f'Полученный Session ID: {session_id}')
     upload_folder = os.path.join(uploads_root, session_id)
+    logger.info(f'Каталог загрузки: {upload_folder}')
     if not os.path.exists(upload_folder):
+        logger.info(f'Каталог загрузки не найден. Создаю каталог: {upload_folder}')
         os.makedirs(upload_folder)
-
     files = request.files.getlist('files')
     if not files:
         return jsonify(error='No selected files'), 400
-
     new_filenames = []
     for file in files:
         if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
+            unix_time = int(time.time())
+            original_filename = secure_filename(file.filename)
+            unique_id = str(uuid.uuid4())[:8]
+            filename = f"IMG_{unix_time}_{unique_id}_{original_filename}"
+            logger.info(f"Filename: {filename}")
             file_path = os.path.join(upload_folder, filename)
-            file.save(file_path)
-            new_filenames.append(filename)
-
+            logger.info(f"File path: {file_path}")
+            try:
+                file.save(file_path)
+                logger.info(f"Saved file {filename} to {file_path}")
+                new_filenames.append(filename)
+            except Exception as e:
+                return jsonify(error=f'Failed to save file: {str(e)}'), 500
     return jsonify(success=True, filenames=new_filenames)
 
 
