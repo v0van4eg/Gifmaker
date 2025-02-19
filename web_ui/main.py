@@ -18,6 +18,13 @@ app.secret_key = 'your_secret_key'
 
 # Фильтр допустимых форматов
 def allowed_file(filename):
+    """
+    Проверяет, является ли файл допустимого типа.
+    Входные параметры:
+    - filename: Имя файла
+    Возвращает:
+    - True, если файл допустимого типа, иначе False
+    """
     return filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'))
 
 
@@ -25,7 +32,10 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 
 
 def clean_uploads():
-    # # Очистка файлов при старте (включая удаление папок)
+    """
+    Очищает директорию загрузок.
+    Очистка файлов при старте (включая удаление папок)
+    """
     logger.info('Проверяем наличие папки uploads...')
     if os.path.exists(uploads_root):
         logger.info('Очищаем старые загрузки...')
@@ -42,6 +52,11 @@ clean_uploads()
 
 @app.route('/get_session_id', methods=['GET'])
 def get_session_id():
+    """
+    Возвращает текущий или новый session_id.
+    Возвращает:
+    - JSON с session_id
+    """
     logger.info("Генерируем session_id")
     session_id = session.get('session_id')
     logger.info(f'Отдаём session_id={session_id}')  # Логируем перед возвратом
@@ -54,8 +69,12 @@ def get_session_id():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    """
+    Главная страница приложения.
+    Возвращает:
+    - HTML шаблон с загруженными изображениями и параметрами для создания GIF
+    """
     logger.info('Переход на главную страницу...')
-
     # Проверяем, есть ли session_id в сессии
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
@@ -96,6 +115,11 @@ def index():
 
 @app.route('/new_session', methods=['GET'])
 def new_session():
+    """
+    Создает новую сессию и очищает старые данные.
+    Возвращает:
+    - Перенаправление на главную страницу
+    """
     session_id = session.get('session_id')
     logger.info(f'Очистка сессии... Текущий session_id={session_id}')
 
@@ -119,6 +143,13 @@ def new_session():
 
 @app.route('/uploads/<filename>')
 def get_uploaded_file(filename):
+    """
+    Возвращает загруженный файл.
+    Входные параметры:
+    - filename: Имя файла
+    Возвращает:
+    - Загруженный файл или сообщение об ошибке
+    """
     session_id = session.get('session_id')
     if not session_id:
         return "Session ID not found", 404
@@ -127,6 +158,13 @@ def get_uploaded_file(filename):
 
 @app.route('/upload', methods=['POST'])
 def upload():
+    """
+    Обрабатывает загрузку изображений.
+    Входные параметры:
+    - files: Файлы для загрузки
+    Возвращает:
+    - JSON с именами новых файлов или сообщение об ошибке
+    """
     logger.info("@@@ Вызываем маршрут /upload")
 
     # Получаем session_id из сессии
@@ -166,6 +204,13 @@ def upload():
 
 @app.route('/remove_image', methods=['POST'])
 def remove_image():
+    """
+    Удаляет изображение.
+    Входные параметры:
+    - image_name: Имя файла для удаления
+    Возвращает:
+    - JSON с успешным статусом или сообщением об ошибке
+    """
     session_id = session.get('session_id')
     logger.info(f"@@@ Маршрут Remove Image. Отправляем Session ID из web_ui: {session_id}")
     try:
@@ -188,6 +233,13 @@ def remove_image():
 
 @app.route('/reorder_images', methods=['POST'])
 def reorder_images():
+    """
+    Переупорядочивает загруженные изображения.
+    Входные параметры:
+    - image_order: Новый порядок изображений
+    Возвращает:
+    - JSON с успешным статусом или сообщением об ошибке
+    """
     session_id = session.get('session_id')
     if not session_id:
         return jsonify(success=False, error='Session ID not found'), 400
@@ -223,6 +275,15 @@ def reorder_images():
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
+    """
+    Генерирует GIF из загруженных изображений.
+    Входные параметры:
+    - duration: Длительность кадра в миллисекундах
+    - loop: Количество циклов воспроизведения GIF
+    - resize: Новые размеры изображений в формате "ШxВ"
+    Возвращает:
+    - Перенаправление на главную страницу или сообщение об ошибке
+    """
     session_id = session.get('session_id')
     logger.info('@@@ Выбран маршрут Создание GIF...')
     logger.info("Отправляем данные на гиф-генератор")

@@ -17,12 +17,31 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 
 
 def allowed_file(filename):
+    """
+    Проверяет, является ли файл допустимого типа.
+
+    Входные параметры:
+    - filename: Имя файла
+
+    Возвращает:
+    - True, если файл допустимого типа, иначе False
+    """
     return filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'))
 
 
 # Загрузка изображений
 @app.route('/upload', methods=['POST'])
 def upload():
+    """
+    Обрабатывает загрузку изображений.
+
+    Входные параметры:
+    - X-Session-ID: Идентификатор сессии (передается в заголовках)
+    - files: Файлы для загрузки
+
+    Возвращает:
+    - JSON с именами новых файлов или сообщение об ошибке
+    """
     session_id = request.headers.get('X-Session-ID')
     if not session_id:
         return jsonify(error='Session ID not in headers. not found'), 400
@@ -59,6 +78,16 @@ def upload():
 # Перестановка изображений
 @app.route('/reorder_images', methods=['POST'])
 def reorder_images():
+    """
+    Переупорядочивает загруженные изображения.
+
+    Входные параметры:
+    - X-Session-ID: Идентификатор сессии (передается в заголовках)
+    - image_order: Новый порядок изображений
+
+    Возвращает:
+    - JSON с успешным статусом или сообщением об ошибке
+    """
     logger.info("Мы внутри image_processing/reorder_images")
     logger.info("Выполняю перестановку изображений")
     session_id = request.headers.get('X-Session-ID')
@@ -91,6 +120,16 @@ def reorder_images():
 # Удаление изображения
 @app.route('/remove_image', methods=['POST'])
 def remove_image():
+    """
+    Удаляет изображение.
+
+    Входные параметры:
+    - X-Session-ID: Идентификатор сессии (передается в заголовках)
+    - image_name: Имя файла для удаления
+
+    Возвращает:
+    - JSON с успешным статусом или сообщением об ошибке
+    """
     logger.info("Мы внутри image_processing/remove_image\nВыполняю удаление изображения")
     session_id = request.headers.get('X-Session-ID')  # Получаем session_id из заголовков
 

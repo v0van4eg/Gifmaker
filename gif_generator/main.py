@@ -17,8 +17,19 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
+    """
+    Генерирует GIF из загруженных изображений.
+
+    Входные параметры:
+    - X-Session-ID: Идентификатор сессии (передается в заголовках)
+    - duration: Длительность кадра в миллисекундах (по умолчанию 200)
+    - loop: Количество циклов воспроизведения GIF (по умолчанию 0)
+    - resize: Новые размеры изображений в формате "ШxВ"
+
+    Возвращает:
+    - JSON с URL сгенерированного GIF или сообщение об ошибке
+    """
     logger.info(f"@@@ Мы внутри Запускаем генератор GIF")
-    #    session_id = request.form.get('session_id')
     session_id = request.headers.get('X-Session-ID')
     logger.info(f'Session ID через request header: {session_id}')
     if not session_id:
