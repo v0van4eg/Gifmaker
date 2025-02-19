@@ -177,7 +177,8 @@ $(function () {
         });
     });
 
-    $('#generate-form').on('submit', function (e) {
+
+        $('#generate-form').on('submit', function (e) {
         e.preventDefault();
         let formData = new FormData(this);
         $('#progress-container').show();
@@ -200,15 +201,17 @@ $(function () {
                 }, false);
                 return xhr;
             },
+
             success: function (response) {
-                $('#progress-container').hide();
-                if (response.success) {
-                    let gifUrl = response.gif_url;
-                    $('#gif-container').html(`<img id="gif-image" src="${gifUrl}" alt="Generated GIF">`);
-                } else {
-                    alert('Ошибка генерации GIF: ' + response.error);
-                }
+            $('#progress-container').hide();
+            if (response.success) {
+                // Перенаправляем пользователя на главную страницу
+                window.location.href = '/';
+            } else {
+                alert('Ошибка генерации GIF: ' + response.error);
+            }
             },
+
             error: function (xhr, status, error) {
                 console.error('Ошибка генерации GIF:', error);
                 $('#progress-container').hide();
@@ -216,6 +219,7 @@ $(function () {
             }
         });
     });
+
     $('#reverse-order-btn').on('click', function () {
         let images = $('#image-container .image-wrapper').toArray().reverse();
         $('#image-container').html(images);
