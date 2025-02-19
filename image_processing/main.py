@@ -91,7 +91,7 @@ def reorder_images():
     logger.info("Мы внутри image_processing/reorder_images")
     logger.info("Выполняю перестановку изображений")
     session_id = request.headers.get('X-Session-ID')
-    logger.info(f'Плолученный Session ID: {session_id}')
+    logger.info(f'Полученный Session ID: {session_id}')
     image_order = request.form.get('image_order')
     if not image_order:
         return jsonify(error='Image order not provided'), 400
@@ -100,19 +100,31 @@ def reorder_images():
     upload_folder = os.path.join(uploads_root, session_id)
     logger.info(f'Полученный порядок файлов: {image_order}')
 
-    for idx, image_name in enumerate(image_order):
-        old_path = os.path.join(upload_folder, image_name)
-        new_path = os.path.join(upload_folder, f'{idx:04d}_{image_name}')
-        if os.path.exists(old_path):
-            os.rename(old_path, new_path)
-            logger.info(f"Renamed {old_path} to {new_path}")
+    temp_renames = {}
+    try:
+        for idx, image_name in enumerate(image_order):
+            old_path = os.path.join(upload_folder, image_name)
+            new_path = os.path.join(upload_folder, f'temp_{idx:04d}_{image_name}')
+            if os.path.isfile(old_path):
+                os.rename(old_path, new_path)
+                temp_renames[new_path] = old_path
+                logger.info(f"Renamed {old_path} to {new_path}")
+            else:
+                logger.warning(f"File {old_path} does not exist or is not a regular file")
 
-    for idx, image_name in enumerate(image_order):
-        old_path = os.path.join(upload_folder, f'{idx:04d}_{image_name}')
-        new_path = os.path.join(upload_folder, image_name)
-        if os.path.exists(old_path):
-            os.rename(old_path, new_path)
-            logger.info(f"Renamed {old_path} to {new_path}")
+        for new_path, old_path in temp_renames.items():
+            final_path = os.path.join(upload_folder, os.path.basename(old_path))
+            os.rename(new_path, final_path)
+            logger.info(f"Renamed {new_path} to {final_path}")
+
+    except Exception as e:
+        logger.error(f"Error during reordering images: {e}")
+        # Если возникла ошибка, попытаться вернуть файлы в исходное состояние
+        for new_path, old_path in temp_renames.items():
+            if os.path.isfile(new_path):
+                os.rename(new_path, old_path)
+                logger.info(f"Reverted {new_path} to {old_path}")
+        return jsonify(error='Failed to reorder images'), 500
 
     return jsonify(success=True)
 
@@ -122,19 +134,15 @@ def reorder_images():
 def remove_image():
     """
     Удаляет изображение.
-
     Входные параметры:
     - X-Session-ID: Идентификатор сессии (передается в заголовках)
     - image_name: Имя файла для удаления
-
     Возвращает:
     - JSON с успешным статусом или сообщением об ошибке
     """
     logger.info("Мы внутри image_processing/remove_image\nВыполняю удаление изображения")
     session_id = request.headers.get('X-Session-ID')  # Получаем session_id из заголовков
 
-    if not session_id:
-        session_id = request.headers.get('X-Session-ID')  # Пытаемся получить из заголовков
     image_name = request.form.get('image_name')
     logger.info(f'Session ID: {session_id}')
     logger.info(f'Image name: {image_name}')

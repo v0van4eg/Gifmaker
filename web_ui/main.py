@@ -91,7 +91,7 @@ def index():
                 return jsonify(error='Failed to create upload directory'), 500
 
     session_id = session['session_id']
-    logger.info(f'Используем session_id={session_id}')
+    logger.info(f'Используем старый session_id={session_id}')
 
     # Получаем список изображений из папки загрузки
     upload_folder = os.path.join(uploads_root, session_id)
@@ -140,6 +140,14 @@ def new_session():
     new_session_id = str(uuid.uuid4())
     session['session_id'] = new_session_id
     logger.info(f'Создан новый session_id={new_session_id}')
+    logger.info('Создаём каталог для загрузки...')
+    upload_folder = os.path.join(uploads_root, new_session_id)
+    try:
+        os.makedirs(upload_folder, exist_ok=True)
+        logger.info(f'Папка успешно создана: {upload_folder}')
+    except Exception as e:
+        logger.error(f'Ошибка при создании папки: {e}')
+        return jsonify(error='Failed to create upload directory'), 500
 
     return redirect(url_for('index'))
 
