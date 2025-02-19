@@ -217,12 +217,12 @@ def upload():
 
     logger.info(f'Session ID: {session_id}')
 
-    # Получаем фа йлы из запроса
+    # Получаем файлы из запроса
     files = request.files.getlist('files')
     if not files:
         return jsonify(error='No files uploaded'), 400
 
-    # Подготавливаем данные для отправки на imag e_processing
+    # Подготавливаем данные для отправки на image_processing
     upload_url = 'http://image_processing:5001/upload'
     headers = {'X-Session-ID': session_id}
     files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
@@ -231,7 +231,7 @@ def upload():
         # Отправляем запрос на image_processing
         response = requests.post(upload_url, files=files_data, headers=headers)
 
-        # Проверяе м статус ответа
+        # Проверяем статус ответа
         if response.status_code == 200:
             response_data = response.json()
             new_filenames = response_data.get('filenames', [])
@@ -242,10 +242,10 @@ def upload():
                 logger.error(f'Ошибка при загрузке файлов: "filenames" не является списком, получено: {new_filenames}')
                 return jsonify(error='Unexpected response format from image_processing'), 500
         else:
-            logger.error(f'Ошибка при загрузке фай лов: {response.text}')
+            logger.error(f'Ошибка при загрузке файлов: {response.text}')
             return jsonify(error='Failed to upload files'), response.status_code
     except Exception as e:
-        logger.error(f'Ошибка при отправке запрос а на image_processing: {str(e)}')
+        logger.error(f'Ошибка при отправке запроса на image_processing: {str(e)}')
         return jsonify(error='Internal server error'), 500
 
 
@@ -264,6 +264,15 @@ def remove_image():
         image_name = request.form.get('image_name')
         if not image_name:
             return jsonify({'success': False, 'message': 'Имя файла не указано'}), 400
+
+        # Удаляем изображение из сессии
+        image_order = session.get('images', {})
+        if image_order:
+            if isinstance(image_order, dict):
+                image_order = {k: v for k, v in image_order.items() if v != image_name}
+            elif isinstance(image_order, list):
+                image_order = [img for img in image_order if img != image_name]
+            session['images'] = image_order
 
         # Отправляем запрос к микросервису image_processing
         response = requests.post(f'http://image_processing:5001/remove_image',
@@ -285,7 +294,7 @@ def reorder_images():
         return jsonify(success=False, error='Session ID not found'), 400
 
     image_order = request.form.get('image_order')
-    logger.info(f'Получен image_order!!!!!!!!!!:  {image_order}')
+    logger.info(f'Получен image_order!!!!!!!!!!: {image_order}')
 
     if not image_order:
         return jsonify(success=False, error='Image order not provided'), 400
@@ -334,13 +343,22 @@ def generate_gif():
     logger.info(f'loop={loop}')
     resize = request.form.get('resize')
     logger.info(f'resize={resize}')
+
+    # Получаем порядок изображений из сессии
+    image_order = session.get('images', {})
+    if not image_order:
+        return jsonify(error='No image order found in session'), 400
+
     generate_url = 'http://gif_generator:5002/generate_gif'
     headers = {'X-Session-ID': session_id}
-    response = requests.post(generate_url, headers=headers, data={
+    data = {
         'duration': duration,
         'loop': loop,
-        'resize': resize
-    })
+        'resize': resize,
+        'image_order': json.dumps(image_order)  # Добавляем порядок изображений в данные запроса
+    }
+
+    response = requests.post(generate_url, headers=headers, data=data)
     if response.status_code == 200:
         return redirect(url_for('index'))
     else:

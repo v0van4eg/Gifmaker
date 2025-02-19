@@ -81,9 +81,7 @@ $(function () {
                 imageOrder[index + 1] = image;
                 let imageWrapper = $('<div class="image-wrapper"></div>');
                 let imgElement = $('<img>').attr('src', `/uploads/${image}`).addClass('draggable');
-                let removeBtn = $('<button class="remove-btn">✖</button>').click(function() {
-                    removeImage(image);
-                });
+                let removeBtn = $('<button class="remove-btn" data-image-name="' + image + '">✖</button>');
                 imageWrapper.append(removeBtn).append(imgElement);
                 imageContainer.append(imageWrapper);
             });
@@ -125,7 +123,14 @@ $(function () {
         });
     }
 
-    function removeImage(imageName) {
+    // Event listener for remove button
+    $(document).on('click', '.remove-btn', function () {
+        let imageName = $(this).data('image-name');
+        let imageWrapper = $(this).closest('.image-wrapper');
+        let removeButton = $(this); // Сохраняем ссылку на кнопку
+
+        removeButton.prop('disabled', true); // Отключаем кнопку
+
         $.ajax({
             url: '/remove_image',
             type: 'POST',
@@ -134,38 +139,21 @@ $(function () {
             success: function(response) {
                 if (response.success) {
                     // Обновляем список изображений
+                    imageWrapper.remove();
                     updateImageList();
                 } else {
                     alert('Ошибка при удалении изображения: ' + response.message);
                 }
             },
             error: function(xhr, status, error) {
-                alert('Произошла ошибка: ' + error);
+                console.error('Ошибка удаления изображения:', error);
+                alert('Ошибка удаления изображения: ' + error);
+            },
+            complete: function() {
+                removeButton.prop('disabled', false); // Включаем кнопку снова
             }
         });
-    }
-
-    function reorderImages() {
-        let imageOrder = sessionStorage.getItem('imageOrder');
-        if (imageOrder) {
-            $.ajax({
-                url: '/reorder_images',
-                type: 'POST',
-                headers: { 'X-Session-ID': session_id },
-                data: { image_order: imageOrder },
-                success: function(response) {
-                    if (response.success) {
-                        alert('Порядок изображений успешно изменен');
-                    } else {
-                        alert('Ошибка при изменении порядка изображений: ' + response.error);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    alert('Произошла ошибка: ' + error);
-                }
-            });
-        }
-    }
+    });
 
     $('#upload-form input[type="file"]').on('change', function () {
         let formData = new FormData();
@@ -180,7 +168,7 @@ $(function () {
             processData: false,
             headers: { 'X-Session-ID': session_id },
             success: function () {
-                location.reload();
+                updateImageList(); // Обновляем список изображений без перезагрузки страницы
             },
             error: function (xhr, status, error) {
                 console.error('Ошибка загрузки файлов:', error);
@@ -189,52 +177,6 @@ $(function () {
         });
     });
 
-    function removeImage(imageName) {
-    $.ajax({
-        url: '/remove_image',
-        type: 'POST',
-        headers: { 'X-Session-ID': session_id },
-        data: { image_name: imageName },
-        success: function(response) {
-            if (response.success) {
-                // Обновляем список изображений
-                updateImageList();
-            } else {
-                alert('Ошибка при удалении изображения: ' + response.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            alert('Произошла ошибка: ' + error);
-        }
-    });
-    }
-
-    // Event listener for remove button
-    $(document).on('click', '.remove-btn', function () {
-        let imageName = $(this).data('image-name');
-        let imageWrapper = $(this).closest('.image-wrapper');
-        let removeButton = $(this); // Сохраняем ссылку на кнопку
-
-        removeButton.prop('disabled', true); // Отключаем кнопку
-
-        $.ajax({
-            url: '/remove_image',
-            type: 'POST',
-            headers: { 'X-Session-ID': session_id },
-            data: { image_name: imageName },
-            success: function () {
-                imageWrapper.remove();
-                updateImageList();
-            },
-            error: function (xhr, status, error) {
-                console.error('Ошибка удаления изображения:', error);
-                alert('Ошибка удаления изображения: ' + error);
-            },
-            complete: function() {
-                removeButton.prop('disabled', false); // Включаем кнопку снова
-            }
-        });
-    });
     $('#generate-form').on('submit', function (e) {
         e.preventDefault();
         let formData = new FormData(this);
@@ -260,7 +202,7 @@ $(function () {
             },
             success: function () {
                 $('#progress-container').hide();
-                location.reload();
+                updateImageList(); // Обновляем список изображений без перезагрузки страницы
             },
             error: function (xhr, status, error) {
                 console.error('Ошибка генерации GIF:', error);
@@ -307,4 +249,7 @@ $(function () {
 
     // Вызываем функцию после загрузки страницы
     attachDraggableAndSortable();
+
+    // Инициализируем список изображений при загрузке страницы
+    updateImageList();
 });

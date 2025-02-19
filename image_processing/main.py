@@ -54,7 +54,7 @@ def upload():
         os.makedirs(upload_folder)
     files = request.files.getlist('files')
     if not files:
-        return jsonify(error='No selected files'), 400
+        return jsonify(error='!!! No selected files'), 400
     new_filenames = []
     for file in files:
         logger.info(f'Файл: {file.filename}')
@@ -136,7 +136,7 @@ def remove_image():
 
     image_name = request.form.get('image_name')
     logger.info(f'Session ID: {session_id}')
-    logger.info(f'Image name: {image_name}')
+    logger.info(f'File name: {image_name}')
 
     if not session_id or not image_name:
         return jsonify(error='Session ID or Image name not provided'), 400
