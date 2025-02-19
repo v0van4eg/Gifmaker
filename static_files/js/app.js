@@ -189,8 +189,29 @@ $(function () {
         });
     });
 
+    function removeImage(imageName) {
+    $.ajax({
+        url: '/remove_image',
+        type: 'POST',
+        headers: { 'X-Session-ID': session_id },
+        data: { image_name: imageName },
+        success: function(response) {
+            if (response.success) {
+                // Обновляем список изображений
+                updateImageList();
+            } else {
+                alert('Ошибка при удалении изображения: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Произошла ошибка: ' + error);
+        }
+    });
+    }
+
+    // Event listener for remove button
     $(document).on('click', '.remove-btn', function () {
-        let imageName = $(this).closest('.image-wrapper').find('img').attr('src').split('/').pop();
+        let imageName = $(this).data('image-name');
         let imageWrapper = $(this).closest('.image-wrapper');
         let removeButton = $(this); // Сохраняем ссылку на кнопку
 
@@ -201,14 +222,9 @@ $(function () {
             type: 'POST',
             headers: { 'X-Session-ID': session_id },
             data: { image_name: imageName },
-            success: function (response) {
-                if (response.success) {
-                    imageWrapper.remove(); // Удаляем элемент из DOM
-                    updateImageList(); // Обновляем список изображений
-                } else {
-                    console.error('Ошибка удаления изображения:', response.message);
-                    alert('Ошибка удаления изображения: ' + response.message);
-                }
+            success: function () {
+                imageWrapper.remove();
+                updateImageList();
             },
             error: function (xhr, status, error) {
                 console.error('Ошибка удаления изображения:', error);
@@ -219,7 +235,6 @@ $(function () {
             }
         });
     });
-
     $('#generate-form').on('submit', function (e) {
         e.preventDefault();
         let formData = new FormData(this);

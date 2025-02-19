@@ -35,11 +35,11 @@
     <section class="right-column">
         <form id="generate-form" method="post" action="{{ url_for('generate_gif') }}">
             <label for="duration">Длительность кадра (мс):</label>
-            <input type="number" name="duration" id="duration" min="10" value="100">
+            <input type="number" name="duration" id="duration" min="10" value="300">
             <label for="loop">Количество циклов:</label>
             <input type="number" name="loop" id="loop" min="0" value="0">
             <label for="resize">Размер (ШxВ):</label>
-            <input type="text" name="resize" id="resize" placeholder="например 400x300">
+            <input type="text" name="resize" id="resize" placeholder="320x240">
             <div class="button-container">
                 <input type="submit" value="Создать GIF" class="btn">
                 {% if gif_file %}

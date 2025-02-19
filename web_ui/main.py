@@ -217,12 +217,12 @@ def upload():
 
     logger.info(f'Session ID: {session_id}')
 
-    # Получаем файлы из запроса
+    # Получаем фа йлы из запроса
     files = request.files.getlist('files')
     if not files:
         return jsonify(error='No files uploaded'), 400
 
-    # Подготавливаем данные для отправки на image_processing
+    # Подготавливаем данные для отправки на imag e_processing
     upload_url = 'http://image_processing:5001/upload'
     headers = {'X-Session-ID': session_id}
     files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
@@ -231,17 +231,21 @@ def upload():
         # Отправляем запрос на image_processing
         response = requests.post(upload_url, files=files_data, headers=headers)
 
-        # Проверяем статус ответа
+        # Проверяе м статус ответа
         if response.status_code == 200:
             response_data = response.json()
             new_filenames = response_data.get('filenames', [])
-            session.setdefault('images', []).extend(new_filenames)
-            return jsonify(success=True, filenames=new_filenames)
+            if isinstance(new_filenames, list):
+                session.setdefault('images', []).extend(new_filenames)
+                return jsonify(success=True, filenames=new_filenames)
+            else:
+                logger.error(f'Ошибка при загрузке файлов: "filenames" не является списком, получено: {new_filenames}')
+                return jsonify(error='Unexpected response format from image_processing'), 500
         else:
-            logger.error(f'Ошибка при загрузке файлов: {response.text}')
+            logger.error(f'Ошибка при загрузке фай лов: {response.text}')
             return jsonify(error='Failed to upload files'), response.status_code
     except Exception as e:
-        logger.error(f'Ошибка при отправке запроса на image_processing: {str(e)}')
+        logger.error(f'Ошибка при отправке запрос а на image_processing: {str(e)}')
         return jsonify(error='Internal server error'), 500
 
 
