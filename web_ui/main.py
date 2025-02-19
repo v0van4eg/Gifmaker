@@ -25,7 +25,7 @@ def allowed_file(filename):
     Возвращает:
     - True, если файл допустимого типа, иначе False
     """
-    return filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'))
+    return filename.lower().endswith(('png', 'jpg', 'jpeg', 'bmp', 'tiff'))
 
 
 uploads_root = os.path.join(app.root_path, 'uploads')
@@ -78,7 +78,7 @@ def index():
     # Проверяем, есть ли session_id в сессии
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
-        logger.info(f'Создан новый session_id={session["session_id"]}')
+        logger.info(f'Создана новая сессия session_id={session["session_id"]}')
 
         # Создаем папку для загрузки только при инициализации новой сессии
         upload_folder = os.path.join(uploads_root, session['session_id'])
@@ -97,7 +97,10 @@ def index():
     upload_folder = os.path.join(uploads_root, session_id)
     images = []
     if os.path.exists(upload_folder):
-        images = [f for f in os.listdir(upload_folder) if os.path.isfile(os.path.join(upload_folder, f))]
+        for f in os.listdir(upload_folder):
+            file_path = os.path.join(upload_folder, f)
+            if os.path.isfile(file_path) and allowed_file(f) and f != 'animation.gif':
+                images.append(f)
 
     gif_file = os.path.join(upload_folder, 'animation.gif')
 

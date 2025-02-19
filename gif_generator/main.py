@@ -3,7 +3,7 @@
 from flask import Flask, request, jsonify, redirect, url_for, session, json
 import os
 import numpy as np
-import imageio.v2 as imageio
+import imageio as imageio
 from PIL import Image, ImageOps
 import logging
 

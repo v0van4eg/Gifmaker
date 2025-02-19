@@ -1,5 +1,5 @@
 Flask
 requests
-imageio
+imageio==2.9.0
 numpy
 Pillow
