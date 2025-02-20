@@ -11,7 +11,7 @@ import logging
 import shutil
 
 # Настройка логирования
-logging.basicConfig(level=logging.DEBUG)  # Установка уровня логирования в DEBUG для более подробного логирования
+logging.basicConfig(level=logging.INFO)  # Установка уровня логирования в DEBUG для более подробного логирования
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
