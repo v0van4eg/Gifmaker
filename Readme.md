@@ -23,7 +23,6 @@
 Проект состоит из нескольких директорий и файлов:
 
 ```
-/home/poly/PythonProjects/Gifmaker
 ├── docker-compose.yml
 ├── gif_generator
 │   ├── Dockerfile
