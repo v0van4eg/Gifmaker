@@ -20,10 +20,8 @@ uploads_root = os.path.join(app.root_path, 'uploads')
 def allowed_file(filename):
     """
     Проверяет, является ли файл допустимого типа.
-
     Входные параметры:
     - filename: Имя файла
-
     Возвращает:
     - True, если файл допустимого типа, иначе False
     """
@@ -33,16 +31,6 @@ def allowed_file(filename):
 # Загрузка изображений
 @app.route('/upload', methods=['POST'])
 def upload():
-    """
-    Обрабатывает загрузку изображений.
-
-    Входные параметры:
-    - X-Session-ID: Идентификатор сессии (передается в заголовках)
-    - files: Файлы для загрузки
-
-    Возвращает:
-    - JSON с именами новых файлов или сообщение об ошибке
-    """
     session_id = request.headers.get('X-Session-ID')
     if not session_id:
         return jsonify(error='Session ID not in headers. not found'), 400
@@ -107,7 +95,7 @@ def reorder_images():
             final_path = os.path.join(upload_folder, os.path.basename(old_path))
             os.rename(new_path, final_path)
             logger.info(f"Renamed {new_path} to {final_path}")
-        logger.info(f'Новый порядок изображений: {image_order}')
+        logger.info(f'Новый порядок изображений:  {image_order}')
 
     except Exception as e:
         logger.error(f"Ошибка при перестановке изображений: {e}")
@@ -119,6 +107,7 @@ def reorder_images():
         return jsonify(error='Не удалось переставить изображения'), 500
 
     return jsonify(success=True)
+
 
 # Удаление изображения
 @app.route('/remove_image', methods=['POST'])
