@@ -29,6 +29,7 @@ footer {
     bottom: 0;
     width: 100%;
 }
+
 .drop-zone {
     border: 2px dashed #ccc;
     border-radius: 20px;
@@ -38,10 +39,33 @@ footer {
     transition: background-color 0.3s;
     margin-bottom: 20px;
 }
+
 .drop-zone.highlight {
     background-color: #f9f9f9;
     border-color: #4CAF50;
 }
+
+.drop-zone h3 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #555;
+}
+
+.drop-zone label {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+.drop-zone label:hover {
+    background-color: #45a049;
+}
+
 #image-container {
     display: flex;
     flex-wrap: wrap;
