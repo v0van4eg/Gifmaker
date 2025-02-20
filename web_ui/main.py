@@ -231,27 +231,25 @@ def get_uploaded_file(filename):
 def upload():
     """
     Обрабатывает загрузку изображений.
-
     Входные параметры:
     - files: Файлы для загрузки
-
     Возвращает:
     - JSON с именами новых файлов или сообщение об ошибке
     """
-    logger.info("@@@ Calling route /upload")
+    logger.info("@@@ Вызываем маршрут /upload")
 
     # Получаем session_id из сессии
     session_id = session.get('session_id')
     if not session_id:
-        logger.error("Session ID not found in upload.")
-        return jsonify(error='Session ID not found'), 400
+        logger.error("Session ID не найден")
+        return jsonify(error='Session ID не найден'), 400
 
-    logger.debug(f'Session ID: {session_id}')
+    logger.info(f'Session ID: {session_id}')
 
     # Получаем файлы из запроса
     files = request.files.getlist('files')
     if not files:
-        logger.error("No files uploaded in upload.")
+        logger.error("Нет загруженных файлов")
         return jsonify(error='No files uploaded'), 400
 
     # Подготавливаем данные для отправки на image_processing
@@ -268,17 +266,30 @@ def upload():
             response_data = response.json()
             new_filenames = response_data.get('filenames', [])
             if isinstance(new_filenames, list):
-                session.setdefault('images', []).extend(new_filenames)
-                logger.debug(f'New filenames added to session: {new_filenames}')
+                # Получаем текущий порядок изображений из сессии
+                image_order = session.get('images', {})
+
+                # Преобразуем все ключи в строки
+                image_order = {str(k): v for k, v in image_order.items()}
+
+                # Добавляем новые изображения в словарь с новыми ключами
+                current_index = len(image_order) + 1
+                for new_filename in new_filenames:
+                    image_order[str(current_index)] = new_filename
+                    current_index += 1
+
+                # Обновляем сессию новым порядком изображений
+                session['images'] = image_order
+                logger.debug(f'Новые имена файлов добавлены в сессию: {new_filenames}')
                 return jsonify(success=True, filenames=new_filenames)
             else:
-                logger.error(f'Unexpected response format from image_processing: {new_filenames}')
+                logger.error(f'Ошибка при загрузке файлов: "filenames" не является списком, получено: {new_filenames}')
                 return jsonify(error='Unexpected response format from image_processing'), 500
         else:
-            logger.error(f'Error uploading files: {response.text}')
+            logger.error(f'Ошибка при загрузке файлов: {response.text}')
             return jsonify(error='Failed to upload files'), response.status_code
     except Exception as e:
-        logger.error(f'Error sending request to image_processing: {str(e)}')
+        logger.error(f'Ошибка при отправке запроса на image_processing: {str(e)}')
         return jsonify(error='Internal server error'), 500
 
 
