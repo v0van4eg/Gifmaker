@@ -19,8 +19,9 @@
         <button id="reverse-order-btn" type="button" class="btn">Изменить порядок сортировки</button>
         <form id="upload-form" enctype="multipart/form-data">
             <div id="drop-area" class="drop-zone">
-                <p>Перетащите файлы сюда или нажмите</p>
-                <input type="file" name="files" multiple accept="image/*">
+                <h3>Перетащите файлы сюда или нажмите</h3>
+                <input type="file" id="fileElem" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+                <label class="btn" for="fileElem">Выбрать файлы</label>
             </div>
         </form>
         <div id="image-container">
