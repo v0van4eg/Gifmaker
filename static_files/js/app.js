@@ -177,8 +177,7 @@ $(function () {
         });
     });
 
-
-        $('#generate-form').on('submit', function (e) {
+    $('#generate-form').on('submit', function (e) {
         e.preventDefault();
         let formData = new FormData(this);
         $('#progress-container').show();
@@ -201,17 +200,15 @@ $(function () {
                 }, false);
                 return xhr;
             },
-
             success: function (response) {
-            $('#progress-container').hide();
-            if (response.success) {
-                // Перенаправляем пользователя на главную страницу
-                window.location.href = '/';
-            } else {
-                alert('Ошибка генерации GIF: ' + response.error);
-            }
+                $('#progress-container').hide();
+                if (response.success) {
+                    // Перенаправляем пользователя на главную страницу
+                    window.location.href = '/';
+                } else {
+                    alert('Ошибка генерации GIF: ' + response.error);
+                }
             },
-
             error: function (xhr, status, error) {
                 console.error('Ошибка генерации GIF:', error);
                 $('#progress-container').hide();

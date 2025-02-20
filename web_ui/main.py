@@ -50,16 +50,20 @@ def clean_uploads():
 
 @app.route('/get_images', methods=['GET'])
 def get_images():
-    session_id = session.get('session_id')
+    session_id = request.headers.
+    logger.info(f'Получаем список изображений из сессии: {session_id}')
     if not session_id:
         return jsonify(error='Session ID not found'), 400
 
     upload_folder = os.path.join(uploads_root, session_id)
+
     images = []
 
     if os.path.exists(upload_folder):
         # Получаем сохраненный порядок изображений из сессии
-        image_order = session.get('images', {})
+        logger.info(f'Получаем сохраненный порядок изображений из сессии')
+        image_order = session.get('images')
+        logger.info(f'Получен сохраненный порядок изображений: {image_order}')
 
         # Если порядок изображений сохранен, используем его
         if image_order:
@@ -223,7 +227,7 @@ def upload():
         return jsonify(error='No files uploaded'), 400
 
     # Подготавливаем данные для отправки на image_processing
-    upload_url = 'http://image_processing:5001/upload'
+    upload_url = 'http://api/upload'
     headers = {'X-Session-ID': session_id}
     files_data = [('files', (file.filename, file.stream, file.mimetype)) for file in files]
 
@@ -275,7 +279,7 @@ def remove_image():
             session['images'] = image_order
 
         # Отправляем запрос к микросервису image_processing
-        response = requests.post(f'http://image_processing:5001/remove_image',
+        response = requests.post(f'http://api/remove_image',
                                  headers={'X-Session-ID': session_id},
                                  data={'image_name': image_name})
 
@@ -304,7 +308,7 @@ def reorder_images():
     logger.info(f'Received image_order: {image_order_dict}')
 
     # Отправляем запрос в image_processing для изменения порядка изображений
-    reorder_url = 'http://image_processing:5001/reorder_images'
+    reorder_url = 'http://api/reorder_images'
     logger.info(f'Отправляем image_order: {image_order_dict}')
 
     response = requests.post(reorder_url,
@@ -349,7 +353,7 @@ def generate_gif():
     if not image_order:
         return jsonify(error='No image order found in session'), 400
 
-    generate_url = 'http://gif_generator:5002/generate_gif'
+    generate_url = 'http://api/generate_gif'
     headers = {'X-Session-ID': session_id}
     data = {
         'duration': duration,
@@ -372,5 +376,6 @@ def generate_gif():
 
 
 if __name__ == '__main__':
+    logger.info('@@@ Запуск сервера...')
     clean_uploads()
     app.run(debug=True, host='0.0.0.0', port=5000)

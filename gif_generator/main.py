@@ -7,6 +7,7 @@ import numpy as np
 import imageio as imageio
 from PIL import Image, ImageOps
 import json
+import subprocess
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,6 +15,17 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 uploads_root = os.path.join(app.root_path, 'uploads')
+
+
+def optimize_gif(input_path, output_path):
+    """
+    Оптимизирует GIF с использованием gifsicle.
+    """
+    try:
+        subprocess.run(['gifsicle', '--optimize=3', '--colors', '256', input_path, '-o', output_path], check=True)
+        logger.info(f"GIF успешно оптимизирован: {output_path}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Ошибка при оптимизации GIF: {e}")
 
 
 @app.route('/generate_gif', methods=['POST'])
@@ -60,9 +72,15 @@ def generate_gif():
         return jsonify(error='No valid images uploaded'), 400
 
     try:
-        with imageio.get_writer(gif_file, mode='I', duration=duration / 1000.0, loop=loop) as writer:
+        temp_gif_file = os.path.join(upload_folder, 'temp_animation.gif')
+        with imageio.get_writer(temp_gif_file, mode='I', duration=duration / 1000.0, loop=loop) as writer:
             for img in images:
                 writer.append_data(img)
+
+        # Оптимизируем GIF
+        optimize_gif(temp_gif_file, gif_file)
+        os.remove(temp_gif_file)  # Удаляем временный файл
+
     except Exception as e:
         logger.error(f"Ошибка при генерации GIF: {e}")
         return jsonify(error='Ошибка при генерации GIF'), 500
