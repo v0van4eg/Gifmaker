@@ -4,13 +4,16 @@ $(function () {
     // Получаем session_id из сервера
     let session_id = null;
 
-    // Функция для получения session_id
-    function getSessionId() {
-        return $.getJSON('/get_session_id').then(function (data) {
-            session_id = data.session_id;
-            return session_id;
-        });
-    }
+    // Инициализация session_id при загрузке страницы
+    getSessionId().then((id) => {
+        if (id) {
+            session_id = id;
+            console.log('Инициализируем Session ID:', session_id);
+            updateImageList(); // Обновляем список изображений
+        } else {
+            console.error('Не удалось бля получить session_id');
+        }
+    });
 
     // Инициализация session_id при загрузке страницы
     getSessionId().then(() => {
@@ -80,6 +83,35 @@ $(function () {
         });
     }
 
+    // Объявляем функцию getSessionId
+function getSessionId() {
+    // Проверяем, есть ли session_id в localStorage
+    let savedSessionId = localStorage.getItem('session_id');
+
+    // Отправляем POST-запрос с заголовком X-Session-Id
+    return $.ajax({
+        url: '/get_session_id',
+        method: 'POST',
+        headers: { 'X-Session-Id': savedSessionId || '' }, // Отправляем сохранённый session_id, если он есть
+        dataType: 'json',
+        success: function (data) {
+            if (data.session_id) {
+                session_id = data.session_id; // Обновляем session_id
+                localStorage.setItem('session_id', session_id); // Сохраняем session_id в localStorage
+                return session_id;
+            } else {
+                console.error('Ошибка: session_id не получен');
+                return null;
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('Ошибка при получении session_id:', error);
+            return null;
+        }
+    });
+}
+
+
     // Обновление списка изображений
     function updateImageList() {
         $.getJSON('/get_images', function (data) {
@@ -134,13 +166,38 @@ $(function () {
     }
 
     $('#new-session-btn').on('click', function () {
-        $.getJSON('/new_session', function (data) {
-            if (data.session_id) {
-                session_id = data.session_id;
-                localStorage.setItem('session_id', session_id);
-                updateImageList();  // Обновляем список изображений
-            } else {
-                alert('Ошибка при создании новой сессии');
+        // Блокируем кнопку на время выполнения запроса
+        let button = $(this);
+        button.prop('disabled', true);
+
+        // Отправляем GET-запрос для создания новой сессии
+        $.ajax({
+            url: '/new_session',
+            method: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.session_id) {
+                    // Очищаем session_id в localStorage
+                    localStorage.removeItem('session_id');
+
+                    // Очищаем контейнер с изображениями
+                    $('#image-container').empty();
+
+                    // Перенаправляем на главную страницу
+                    window.location.href = '/';
+
+                    console.log('Новая сессия создана. Session ID:', data.session_id);
+                } else {
+                    alert('Ошибка при создании новой сессии: session_id не получен');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Ошибка при создании новой сессии:', error);
+                alert('Ошибка при создании новой сессии: ' + error);
+            },
+            complete: function () {
+                // Разблокируем кнопку после завершения запроса
+                button.prop('disabled', false);
             }
         });
     });
