@@ -1,4 +1,5 @@
 .venv
 Исходники.txt
 uploads
-./nginx/logs
+nginx
+Readme.md

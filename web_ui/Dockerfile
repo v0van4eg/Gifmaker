@@ -8,10 +8,10 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 # Копируем весь код проекта в контейнер
-COPY main.py .
+COPY . .
 # Устанавливаем переменную окружения для Flask (если используется)
 ENV FLASK_APP=main.py
 # Открываем порт для приложения (если необходимо)
 EXPOSE 5000
 # Команда для запуска приложения
-CMD ["python", "main.py"]
+CMD ["python", "app.py"]

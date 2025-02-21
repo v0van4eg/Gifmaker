@@ -1,15 +1,23 @@
 $(function () {
     const dropArea = document.getElementById('drop-area');
 
-    // Получаем session_id из localStorage или создаем новый
-    let session_id = localStorage.getItem('session_id');
-    if (!session_id) {
-        $.getJSON('/get_session_id', function(data) {
+    // Получаем session_id из сервера
+    let session_id = null;
+
+    // Функция для получения session_id
+    function getSessionId() {
+        return $.getJSON('/get_session_id').then(function (data) {
             session_id = data.session_id;
-            localStorage.setItem('session_id', session_id);
+            return session_id;
         });
     }
 
+    // Инициализация session_id при загрузке страницы
+    getSessionId().then(() => {
+        console.log('Session ID:', session_id);
+    });
+
+    // Обработчики событий для drag-and-drop
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, preventDefaults, false);
     });
@@ -46,6 +54,7 @@ $(function () {
         uploadFiles(files);
     }
 
+    // Загрузка файлов на сервер
     function uploadFiles(files) {
         let formData = new FormData();
         for (let i = 0; i < files.length; i++) {
@@ -58,47 +67,48 @@ $(function () {
             contentType: false,
             processData: false,
             headers: { 'X-Session-ID': session_id },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
-                    // Обновляем список изображений
                     updateImageList();
                 } else {
                     alert('Ошибка при загрузке файлов: ' + response.error);
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 alert('Произошла ошибка: ' + error);
             }
         });
     }
 
+    // Обновление списка изображений
     function updateImageList() {
-        $.getJSON('/get_images', function(data) {
+        $.getJSON('/get_images', function (data) {
             let imageContainer = $('#image-container');
             imageContainer.empty();
-            let imageOrder = {};
-            data.images.forEach((image, index) => {
-                imageOrder[index + 1] = image;
-                let imageWrapper = $('<div class="image-wrapper"></div>');
-                let imgElement = $('<img>').attr('src', `/uploads/${image}`).addClass('draggable');
-                let removeBtn = $('<button class="remove-btn" data-image-name="' + image + '">✖</button>');
-                imageWrapper.append(removeBtn).append(imgElement);
-                imageContainer.append(imageWrapper);
-            });
-            makeImagesDraggable();
-            sessionStorage.setItem('imageOrder', JSON.stringify(imageOrder));
+            if (data.images && Array.isArray(data.images)) {
+                data.images.forEach((image, index) => {
+                    let imageWrapper = $('<div class="image-wrapper"></div>');
+                    let imgElement = $('<img>').attr('src', `/uploads/${image}`).addClass('draggable');
+                    let removeBtn = $('<button class="remove-btn" data-image-name="' + image + '">✖</button>');
+                    imageWrapper.append(removeBtn).append(imgElement);
+                    imageContainer.append(imageWrapper);
+                });
+                makeImagesDraggable();
+            } else {
+                console.error('Ошибка: данные изображений не являются массивом');
+            }
         });
     }
 
+    // Сделать изображения перетаскиваемыми
     function makeImagesDraggable() {
         $('#image-container').sortable({
             update: function () {
                 let imageOrder = {};
-                $('#image-container').children().each(function(index) {
+                $('#image-container').children().each(function (index) {
                     let imageSrc = $(this).find('img').attr('src').split('/').pop();
                     imageOrder[index + 1] = imageSrc;
                 });
-                sessionStorage.setItem('imageOrder', JSON.stringify(imageOrder));
 
                 $.ajax({
                     url: '/reorder_images',
@@ -106,7 +116,7 @@ $(function () {
                     headers: { 'X-Session-ID': session_id },
                     data: { image_order: JSON.stringify(imageOrder) },
                     contentType: 'application/x-www-form-urlencoded',
-                    success: function(response) {
+                    success: function (response) {
                         if (!response.success) {
                             console.error('Ошибка перестановки изображений:', response.error);
                             alert('Ошибка перестановки изображений: ' + response.error);
@@ -114,7 +124,7 @@ $(function () {
                             console.log('Перестановка успешна:', response);
                         }
                     },
-                    error: function(xhr, status, error) {
+                    error: function (xhr, status, error) {
                         console.error('Ошибка перестановки изображений:', xhr.responseText || error);
                         alert('Ошибка перестановки изображений: ' + (xhr.responseText || error));
                     }
@@ -123,60 +133,50 @@ $(function () {
         });
     }
 
-    // Event listener for remove button
+    $('#new-session-btn').on('click', function () {
+        $.getJSON('/new_session', function (data) {
+            if (data.session_id) {
+                session_id = data.session_id;
+                localStorage.setItem('session_id', session_id);
+                updateImageList();  // Обновляем список изображений
+            } else {
+                alert('Ошибка при создании новой сессии');
+            }
+        });
+    });
+
+    // Удаление изображения
     $(document).on('click', '.remove-btn', function () {
         let imageName = $(this).data('image-name');
         let imageWrapper = $(this).closest('.image-wrapper');
-        let removeButton = $(this); // Сохраняем ссылку на кнопку
+        let removeButton = $(this);
 
-        removeButton.prop('disabled', true); // Отключаем кнопку
+        removeButton.prop('disabled', true);
 
         $.ajax({
             url: '/remove_image',
             type: 'POST',
             headers: { 'X-Session-ID': session_id },
             data: { image_name: imageName },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
-                    // Обновляем список изображений
                     imageWrapper.remove();
                     updateImageList();
                 } else {
                     alert('Ошибка при удалении изображения: ' + response.message);
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error('Ошибка удаления изображения:', error);
                 alert('Ошибка удаления изображения: ' + error);
             },
-            complete: function() {
-                removeButton.prop('disabled', false); // Включаем кнопку снова
+            complete: function () {
+                removeButton.prop('disabled', false);
             }
         });
     });
 
-    $('#upload-form input[type="file"]').on('change', function () {
-        let formData = new FormData();
-        $.each(this.files, function (_, file) {
-            formData.append('files', file);
-        });
-        $.ajax({
-            url: '/upload',
-            type: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            headers: { 'X-Session-ID': session_id },
-            success: function () {
-                updateImageList(); // Обновляем список изображений без перезагрузки страницы
-            },
-            error: function (xhr, status, error) {
-                console.error('Ошибка загрузки файлов:', error);
-                alert('Ошибка загрузки файлов: ' + error);
-            }
-        });
-    });
-
+    // Генерация GIF
     $('#generate-form').on('submit', function (e) {
         e.preventDefault();
         let formData = new FormData(this);
@@ -203,7 +203,6 @@ $(function () {
             success: function (response) {
                 $('#progress-container').hide();
                 if (response.success) {
-                    // Перенаправляем пользователя на главную страницу
                     window.location.href = '/';
                 } else {
                     alert('Ошибка генерации GIF: ' + response.error);
@@ -217,44 +216,6 @@ $(function () {
         });
     });
 
-    $('#reverse-order-btn').on('click', function () {
-        let images = $('#image-container .image-wrapper').toArray().reverse();
-        $('#image-container').html(images);
-
-        let imageOrder = {};
-        images.forEach((img, index) => {
-            let imageSrc = $(img).find('img').attr('src').split('/').pop();
-            imageOrder[index + 1] = imageSrc;
-        });
-        $.ajax({
-            url: '/reorder_images',
-            type: 'POST',
-            headers: { 'X-Session-ID': session_id },
-            data: { image_order: JSON.stringify(imageOrder) },
-            contentType: 'application/x-www-form-urlencoded',
-            success: function(response) {
-                if (!response.success) {
-                    console.error('Ошибка перестановки изображений:', response.error);
-                    alert('Ошибка перестановки изображений: ' + response.error);
-                } else {
-                    console.log('Перестановка успешна:', response);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Ошибка перестановки изображений:', xhr.responseText || error);
-                alert('Ошибка перестановки изображений: ' + (xhr.responseText || error));
-            }
-        });
-    });
-
-    // Определяем функцию attachDraggableAndSortable
-    function attachDraggableAndSortable() {
-        makeImagesDraggable();
-    }
-
-    // Вызываем функцию после загрузки страницы
-    attachDraggableAndSortable();
-
-    // Инициализируем список изображений при загрузке страницы
+    // Инициализация списка изображений при загрузке страницы
     updateImageList();
 });

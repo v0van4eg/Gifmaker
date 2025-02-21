@@ -1,151 +1,128 @@
-# Импортируем необходимые библиотеки
-from flask import Flask, request, jsonify  # Flask для создания веб-приложения
-import logging  # Для логирования событий
-import os  # Для работы с файловой системой
-import numpy as np  # Для работы с массивами изображений
-import imageio as imageio  # Для создания GIF
-from PIL import Image, ImageOps  # Для обработки изображений
-import json  # Для работы с JSON
-import subprocess  # Для вызова внешних команд (gifsicle)
+from flask import Flask, request, jsonify
+import logging
+import os
+import numpy as np
+import imageio as imageio
+from PIL import Image, ImageOps
+import subprocess
+import redis
 
-# Настраиваем логирование
-logging.basicConfig(level=logging.INFO)  # Устанавливаем уровень логирования на INFO
-logger = logging.getLogger(__name__)  # Создаем логгер для текущего модуля
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Создаем Flask-приложение
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Секретный ключ для подписи сессий
+app.secret_key = 'your_secret_key'
 
-# Путь к корневой директории для загрузок
+redis_host = os.getenv('REDIS_HOST', 'redis')
+redis_client = redis.Redis(host=redis_host, port=6379, db=0)
+
 uploads_root = os.path.join(app.root_path, 'uploads')
 
 
 def optimize_gif(input_path, output_path):
-    """
-    Оптимизирует GIF с использованием утилиты gifsicle.
-
-    Параметры:
-    - input_path: Путь к исходному GIF-файлу.
-    - output_path: Путь для сохранения оптимизированного GIF-файла.
-    """
     try:
-        # Выполняем команду gifsicle для оптимизации GIF
         subprocess.run(['gifsicle', '--optimize=3', '--colors', '256', input_path, '-o', output_path], check=True)
         logger.info(f"GIF успешно оптимизирован: {output_path}")
     except subprocess.CalledProcessError as e:
-        # Логируем ошибку, если оптимизация не удалась
         logger.error(f"Ошибка при оптимизации GIF: {e}")
 
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
     """
-    Генерирует GIF из загруженных изображений.
-
-    Возвращает:
-    - JSON с результатом операции (успех/ошибка) и URL сгенерированного GIF.
+    Генерирует GIF на основе данных из Redis.
     """
-    logger.info("@@@ Запуск генерации GIF")
-
     # Получаем session_id из заголовков запроса
     session_id = request.headers.get('X-Session-ID')
-    logger.info(f'Session ID из заголовков запроса: {session_id}')
-
-    # Проверяем, что session_id передан
     if not session_id:
-        logger.error("Session ID не найден в запросе")
+        logger.error("Session ID не найден в заголовках запроса")
         return jsonify(error='Session ID not found'), 400
+    logger.info(f"Получен Session ID: {session_id}")
 
-    logger.info(f'Используемый Session ID: {session_id}')
+    # Получаем параметры для генерации GIF из запроса
+    duration = int(request.form.get('duration', 200))
+    loop = int(request.form.get('loop', 0))
+    resize = request.form.get('resize')
 
-    # Путь к папке загрузок для текущей сессии
+    # Получаем порядок изображений из Redis
+    image_order = redis_client.hgetall(f'session:{session_id}:images')
+    if not image_order:
+        logger.error("Порядок изображений не найден в Redis")
+        return jsonify(error='No image order found in Redis'), 400
+
+    # Декодируем ключи и значения из bytes в строки
+    decoded_image_order = {key.decode('utf-8'): value.decode('utf-8') for key, value in image_order.items()}
+    logger.info(f"Декодированный порядок изображений: {decoded_image_order}")
+
+    # Определяем папку для загрузок и путь к GIF-файлу
     upload_folder = os.path.join(uploads_root, session_id)
-    # Путь к итоговому GIF-файлу
     gif_file = os.path.join(upload_folder, 'animation.gif')
+    logger.info(f"Папка для загрузок: {upload_folder}")
+    logger.info(f"Путь к GIF-файлу: {gif_file}")
 
-    # Получаем параметры для генерации GIF из формы запроса
-    duration = int(request.form.get('duration', 200))  # Длительность кадра в миллисекундах
-    logger.info(f'Длительность кадра: {duration} мс')
-
-    loop = int(request.form.get('loop', 0))  # Количество циклов (0 для бесконечного цикла)
-    logger.info(f'Количество циклов: {loop}')
-
-    resize = request.form.get('resize')  # Размер изображения (например, "320x240")
-    logger.info(f'Размер изображения: {resize}')
-
-    # Получаем порядок изображений из данных запроса
-    image_order_json = request.form.get('image_order')
-    if not image_order_json:
-        logger.error("Порядок изображений не найден в запросе")
-        return jsonify(error='No image order found in request'), 400
-
-    # Преобразуем JSON с порядком изображений в словарь
-    image_order = json.loads(image_order_json)
-    logger.info(f'Полученный порядок изображений: {image_order}')
-
-    # Список для хранения обработанных изображений
+    # Обрабатываем изображения
+    logger.info("Начало обработки изображений")
     images = []
+    for idx in sorted(decoded_image_order.keys(), key=int):
+        image_name = decoded_image_order[idx]
+        logger.info(f"Обработка изображения: {image_name}")
 
-    # Обрабатываем каждое изображение в соответствии с порядком
-    for idx in sorted(image_order.keys(), key=int):
-        image_name = image_order[idx]
         try:
-            # Полный путь к изображению
             image_path = os.path.join(upload_folder, image_name)
-            logger.info(f'Обработка изображения: {image_path}')
+            logger.info(f"Путь к изображению: {image_path}")
 
-            # Открываем изображение с помощью Pillow
+            # Открываем изображение и применяем EXIF-ориентацию
             img = Image.open(image_path)
-            # Корректируем ориентацию изображения (если необходимо)
             img = ImageOps.exif_transpose(img)
+            logger.info(f"Изображение {image_name} успешно открыто и обработано")
 
-            # Если указан размер, изменяем размер изображения
+            # Изменяем размер изображения, если указан параметр resize
             if resize:
                 width, height = map(int, resize.split('x'))
-                logger.info(f'Изменение размера изображения на {width}x{height}')
+                logger.info(f"Изменение размера изображения на {width}x{height}")
                 img = img.resize((width, height), Image.LANCZOS)
 
             # Преобразуем изображение в массив numpy и добавляем в список
             images.append(np.array(img))
+            logger.info(f"Изображение {image_name} успешно добавлено в список для генерации GIF")
+
         except Exception as e:
-            # Логируем ошибку, если изображение не удалось обработать
             logger.error(f"Ошибка при обработке изображения {image_name}: {e}")
             continue
 
-    # Проверяем, что есть хотя бы одно изображение для генерации GIF
+    # Проверяем, есть ли изображения для генерации GIF
     if not images:
         logger.error("Нет допустимых изображений для генерации GIF")
         return jsonify(error='No valid images uploaded'), 400
+    logger.info(f"Количество изображений для генерации GIF: {len(images)}")
 
+    # Генерация GIF
+    logger.info("Начало генерации GIF")
     try:
-        # Создаем временный файл для GIF
         temp_gif_file = os.path.join(upload_folder, 'temp_animation.gif')
-        logger.info(f'Создание временного GIF-файла: {temp_gif_file}')
+        logger.info(f"Временный файл GIF: {temp_gif_file}")
 
-        # Генерируем GIF с помощью imageio
+        # Создаем GIF с использованием imageio
         with imageio.get_writer(temp_gif_file, mode='I', duration=duration / 1000.0, loop=loop) as writer:
             for img in images:
                 writer.append_data(img)
+        logger.info("GIF успешно сгенерирован")
 
         # Оптимизируем GIF с помощью gifsicle
-        logger.info(f'Оптимизация GIF: {temp_gif_file} -> {gif_file}')
+        logger.info("Оптимизация GIF с помощью gifsicle")
         optimize_gif(temp_gif_file, gif_file)
 
         # Удаляем временный файл
         os.remove(temp_gif_file)
-        logger.info(f'Временный файл {temp_gif_file} удален')
+        logger.info(f"Временный файл {temp_gif_file} удален")
 
     except Exception as e:
-        # Логируем ошибку, если генерация GIF не удалась
         logger.error(f"Ошибка при генерации GIF: {e}")
         return jsonify(error='Ошибка при генерации GIF'), 500
 
-    # Возвращаем успешный результат и URL сгенерированного GIF
-    logger.info(f'GIF успешно сгенерирован: {gif_file}')
-    return jsonify(success=True, gif_url=f'/uploads/{session_id}/animation.gif')
+    # Возвращаем успешный результат
+    logger.info(f"GIF успешно создан и доступен по адресу: /uploads/{session_id}/animation.gif")
 
 
 if __name__ == '__main__':
-    # Запускаем Flask-приложение
-    logger.info("Запуск Flask-приложения на порту 5002")
     app.run(debug=True, host='0.0.0.0', port=5002)

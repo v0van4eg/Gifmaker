@@ -28,6 +28,7 @@ def load_gitignore_rules(startpath):
     ignore_rules.append("__pycache__")
     ignore_rules.append("__init__.py")
     ignore_rules.append("create_src.py")
+    ignore_rules.append("main_old.py")
     return ignore_rules
 
 
@@ -100,7 +101,7 @@ def create_directory_tree_report(output_file):
         report_file.write("\n\nСОДЕРЖИМОЕ ФАЙЛОВ:\n")
         for rel_path in file_paths:
             absolute_path = os.path.join(current_dir, rel_path)
-            report_file.write(f"\n───=====----- {rel_path} -----=====───\n")
+            report_file.write(f"\n##################################### {rel_path} #####################################\n")
             report_file.write(get_file_content(absolute_path) + "\n")
 
 
