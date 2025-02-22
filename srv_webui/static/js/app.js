@@ -73,7 +73,7 @@ $(function () {
     }
 
     function updateImageList() {
-        $.getJSON('/get_images', function(data) {
+        $.getJSON('/get_order', function(data) {
             let imageContainer = $('#image-container');
             imageContainer.empty();
             let imageOrder = {};

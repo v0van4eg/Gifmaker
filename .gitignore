@@ -2,3 +2,9 @@
 Исходники.txt
 uploads
 ./nginx/logs
+docker-compose.yml
+services.txt
+nginx
+gif_generator
+static_files
+Readme.md
