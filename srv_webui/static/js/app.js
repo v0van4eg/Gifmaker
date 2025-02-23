@@ -1,13 +1,17 @@
 $(function () {
     const dropArea = document.getElementById('drop-area');
-
     // Получаем session_id из localStorage или создаем новый
     let session_id = localStorage.getItem('session_id');
     if (!session_id) {
         $.getJSON('/get_session_id', function(data) {
             session_id = data.session_id;
             localStorage.setItem('session_id', session_id);
+            // Инициализируем список изображений после получения session_id
+            updateImageList();
         });
+    } else {
+        // Если session_id уже есть, сразу инициализируем список изображений
+        updateImageList();
     }
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -22,6 +26,7 @@ $(function () {
     ['dragenter', 'dragover'].forEach(eventName => {
         dropArea.addEventListener(eventName, highlight, false);
     });
+
     ['dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, unhighlight, false);
     });
@@ -97,7 +102,6 @@ $(function () {
                     imageOrder[index + 1] = imageSrc;
                 });
                 sessionStorage.setItem('imageOrder', JSON.stringify(imageOrder));
-
                 $.ajax({
                     url: '/reorder_images',
                     type: 'POST',
@@ -126,9 +130,7 @@ $(function () {
         let imageName = $(this).data('image-name');
         let imageWrapper = $(this).closest('.image-wrapper');
         let removeButton = $(this); // Сохраняем ссылку на кнопку
-
         removeButton.prop('disabled', true); // Отключаем кнопку
-
         $.ajax({
             url: '/remove_image',
             type: 'POST',
@@ -180,7 +182,6 @@ $(function () {
         let formData = new FormData(this);
         $('#progress-container').show();
         $('#progress-bar').width('0%').text('0%');
-
         $.ajax({
             url: '/generate_gif',
             type: 'POST',
@@ -218,7 +219,6 @@ $(function () {
     $('#reverse-order-btn').on('click', function () {
         let images = $('#image-container .image-wrapper').toArray().reverse();
         $('#image-container').html(images);
-
         let imageOrder = {};
         images.forEach((img, index) => {
             let imageSrc = $(img).find('img').attr('src').split('/').pop();
@@ -252,7 +252,4 @@ $(function () {
 
     // Вызываем функцию после загрузки страницы
     attachDraggableAndSortable();
-
-    // Инициализируем список изображений при загрузке страницы
-    updateImageList();
 });

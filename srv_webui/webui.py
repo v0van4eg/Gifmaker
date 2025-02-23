@@ -274,6 +274,7 @@ def reorder_images():
     # session_id = request.headers.get('X-Session-ID')
     session_id = request.headers['X-Session-ID']
     logger.info(f"Session ID: {session_id}")
+    # Читаем данные из Redis
     redis_key = f"session:{session_id}:order"
     if redis_client.exists(redis_key):
         order = redis_client.lrange(redis_key, 0, -1)
@@ -296,9 +297,7 @@ def generate_gif():
         logger.info(f"Передаём порядок изображений: {order}")
         # Здесь можно использовать order для генерации GIF
         # TODO: Дописать роут /generate_gif
-        return jsonify(success=True)
-    else:
-        return jsonify(error='No files found for this session'), 404
+
 
 
 # @app.before_request
