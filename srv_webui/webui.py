@@ -185,10 +185,8 @@ def upload():
     Обрабатывает загрузку изображений.
     """
     logger.info("Запрос на загрузку изображений.")
-    session_id = request.headers['X-Session-ID']
-    if not session_id:
-        logger.error("Session ID не найден.")
-        return jsonify(error='Session ID not found'), 400
+    session_id = session.get('session_id')
+
 
     logger.info(f"Session ID: {session_id}")
     files = request.files.getlist('files')
@@ -281,27 +279,19 @@ def generate_gif():
         return jsonify(error='No files found for this session'), 404
 
 
-@app.before_request
-def ensure_session_id():
-    if 'session_id' not in session:
-        session['session_id'] = request.headers.get('X-Session-ID', str(uuid.uuid4()))
+# @app.before_request
+# def ensure_session_id():
+#     if 'session_id' not in session:
+#         session['session_id'] = request.headers.get('X-Session-ID', str(uuid.uuid4()))
+#
 
-
-@app.route('/uploads/<path:filename>')
-def get_uploaded_file(filename):
-    """
-    Возвращает загруженный файл.
-    Входные параметры:
-    - filename: Имя файла
-    Возвращает:
-    - Загруженный файл или сообщение об ошибке
-    """
-    session_id =     session_id = request.headers['X-Session-ID']
-    if not session_id:
-        logger.error("Session ID not found in get_uploaded_file.")
-        return "Session ID not found", 404
+@app.route('/uploads/<session_id>/<path:filename>')
+def get_uploaded_file(session_id, filename):
+    session_id = session.get('session_id')
+    #session_id = request.headers.get('X-Session-ID')
     logger.debug(f'Returning file {filename} from session {session_id}')
     return send_from_directory(os.path.join(uploads_root, session_id), filename)
+
 
 
 if __name__ == '__main__':

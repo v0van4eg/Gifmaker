@@ -45,15 +45,6 @@ def upload():
     upload_folder = os.path.join(uploads_root, session_id)
     logger.info(f'Каталог загрузки: {upload_folder}')
 
-    # Создаем папку для загрузки, если она не существует
-    if not os.path.exists(upload_folder):
-        logger.info(f'Каталог загрузки не найден. Создаю каталог: {upload_folder}')
-        try:
-            os.makedirs(upload_folder)
-            logger.debug(f'Каталог успешно создан: {upload_folder}')
-        except Exception as e:
-            logger.error(f'Ошибка при создании каталога: {e}')
-            return jsonify(error=f'Failed to create upload directory: {str(e)}'), 500
 
     # Получаем файлы из запроса
     files = request.files.getlist('files')
