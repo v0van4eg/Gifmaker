@@ -25,10 +25,10 @@
             </div>
         </form>
         <div id="image-container">
-            {% for image in images %}
-            <div class="image-wrapper" data-image="{{ image }}">
-                <img src="{{ url_for('get_uploaded_file', filename=image) }}">
-                <button class="remove-btn">✖</button>
+           {% for image in order %}
+            <div class="image-wrapper">
+                <img src="/uploads/{{ session_id }}/{{ image }}" alt="{{ image }}">
+                <button class="remove-btn" data-image-name="{{ image }}">✖</button>
             </div>
             {% endfor %}
         </div>

@@ -76,17 +76,15 @@ $(function () {
         $.getJSON('/get_order', function(data) {
             let imageContainer = $('#image-container');
             imageContainer.empty();
-            let imageOrder = {};
-            data.images.forEach((image, index) => {
-                imageOrder[index + 1] = image;
-                let imageWrapper = $('<div class="image-wrapper"></div>');
-                let imgElement = $('<img>').attr('src', `/uploads/${image}`).addClass('draggable');
-                let removeBtn = $('<button class="remove-btn" data-image-name="' + image + '">✖</button>');
+            data.order.forEach((image) => {
+                let imageWrapper = $('<div>').addClass('image-wrapper');
+                let imgElement = $('<img>').attr('src', `/uploads/${session_id}/${image}?t=${Date.now()}`).addClass('draggable');
+                let removeBtn = $('<button>').text('✖').addClass('remove-btn').data('image-name', image);
                 imageWrapper.append(removeBtn).append(imgElement);
                 imageContainer.append(imageWrapper);
             });
             makeImagesDraggable();
-            sessionStorage.setItem('imageOrder', JSON.stringify(imageOrder));
+            sessionStorage.setItem('imageOrder', JSON.stringify(data.order));
         });
     }
 

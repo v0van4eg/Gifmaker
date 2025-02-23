@@ -76,20 +76,23 @@ def get_session_id():
 def get_order():
     """Возвращает текущий порядок изображений из Redis."""
     logger.debug("Запрос на получение порядка изображений.")
-    session_id = request.headers.get('X-Session-Id')
+    session_id = request.headers.get('X-Session-ID', session.get('session_id'))
     if not session_id:
-        session_id = session.get('session_id', None)
-        if not session_id:
-            return jsonify(error='Session ID not found'), 400
+        return jsonify(error='Session ID not found'), 400
     logger.info(f'Текущий session_id: {session_id}')
     # Получаем порядок файлов из Redis
     redis_key = f"session:{session_id}:order"
     if redis_client.exists(redis_key):
         current_order = redis_client.lrange(redis_key, 0, -1)
         current_order = [item.decode('utf-8') for item in current_order]
-        logger.info(f"Возвращаю текущий порядок изображений: {current_order}")
+        logger.info(f"Возвращаю текущий порядок изображений:")
+        for item in current_order:
+            logger.info(f"Файл - {item}")
+
         return jsonify(order=current_order)
-    else: return jsonify(order=[])
+    else:
+        return jsonify(order=[])
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -175,19 +178,10 @@ def new_session():
     return redirect(url_for('index'))
 
 
-@app.route('/uploads/<path:filename>')
-def get_uploaded_file(filename):
-    """
-    Возвращает загруженный файл.
-    """
-    logger.info(f"Запрос на получение файла: {filename}")
-    session_id = session.get('session_id')
-    if not session_id:
-        logger.error("Session ID не найден.")
-        return "Session ID not found", 404
-
-    logger.debug(f"Возвращаем файл {filename} из сессии {session_id}")
-    return send_from_directory(os.path.join(uploads_root, session_id), filename)
+@app.route('/uploads/<path:filename>', methods=['GET'])
+def get_uploaded_file(session_id, filename):
+    session_path = os.path.join(uploads_root, session_id)
+    return send_from_directory(session_path, filename)
 
 
 @app.route('/upload', methods=['POST'])
@@ -220,18 +214,6 @@ def upload():
             response_data = response.json()
             new_filenames = response_data.get('filenames', [])
             if isinstance(new_filenames, list):
-                # Обновляем порядок изображений в Redis
-                redis_key = f"session:{session_id}:order"
-                current_order = redis_client.lrange(redis_key, 0, -1)
-                current_order = [item.decode('utf-8') for item in current_order]
-
-                # Добавляем новые файлы в конец списка
-                current_order.extend(new_filenames)
-
-                # Сохраняем обновленный порядок в Redis
-                redis_client.delete(redis_key)
-                redis_client.rpush(redis_key, *current_order)
-
                 logger.info(f"Новые имена файлов добавлены в Redis: {new_filenames}")
                 return jsonify(success=True, filenames=new_filenames)
             else:
@@ -253,6 +235,20 @@ def remove_image():
     logger.info("Запрос на удаление изображения.")
     session_id = request.headers.get('X-Session-ID')
     logger.info(f"Session ID: {session_id}")
+    redis_key = f"session:{session_id}:order"
+    if redis_client.exists(redis_key):
+        image_name = request.form.get('image_name')
+        if image_name:
+            redis_client.lrem(redis_key, 0, image_name)
+            logger.info(f"Изображение {image_name} удалено из Redis.")
+        else:
+            logger.error("Имя изображения не указано.")
+            return jsonify({'success': False, 'message': 'Image name not specified'}), 400
+    else:
+        logger.error("Session ID не найден.")
+        return jsonify({'success': False, 'message': 'Session ID not found'}), 400
+
+    return jsonify({'success': True})
     # TODO: Дописать роут /remove_image
 
 
@@ -262,7 +258,10 @@ def reorder_images():
     # session_id = request.headers.get('X-Session-ID')
     session_id = session.get('session_id')
     logger.info(f"Session ID: {session_id}")
-    order = get_order()
+    redis_key = f"session:{session_id}:order"
+    if redis_client.exists(redis_key):
+        order = redis_client.lrange(redis_key, 0, -1)
+        order = [item.decode('utf-8') for item in order]
     logger.info(f"Order: {order}")
     return jsonify({'success': True})
     # TODO: Дописать роут /reorder_images
@@ -270,17 +269,30 @@ def reorder_images():
 
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
-    logger.info("Заглушка: запрос на генерацию GIF.")
     session_id = request.headers.get('X-Session-ID')
-    logger.info(f"Session ID: {session_id}")
-    order = redis_client.lrange(f"session:{session_id}:order", 0, -1)
-    logger.info(f"Order: {order}")
-    return jsonify({'success': True})
+    if not session_id:
+        return jsonify(error='Session ID not found'), 400
 
-    # TODO: Дописать роут /generate_gif
+    redis_key = f"session:{session_id}:order"
+    if redis_client.exists(redis_key):
+        order = redis_client.lrange(redis_key, 0, -1)
+        order = [item.decode('utf-8') for item in order]
+        logger.info(f"Передаём порядок изображений: {order}")
+        # Здесь можно использовать order для генерации GIF
+        # TODO: Дописать роут /generate_gif
+        return jsonify(success=True)
+    else:
+        return jsonify(error='No files found for this session'), 404
+
+
+@app.before_request
+def ensure_session_id():
+    if 'session_id' not in session:
+        session['session_id'] = request.headers.get('X-Session-ID', str(uuid.uuid4()))
 
 
 if __name__ == '__main__':
     clean_uploads()  # Очищаем директорию загрузок при запуске приложения
+    redis_client.flushdb()  # Очистка Redis перед запуском
     logger.info("Запуск Flask-приложения на порту 5000.")
     app.run(debug=True, host='0.0.0.0', port=5000)

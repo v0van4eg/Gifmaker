@@ -1,3 +1,6 @@
+# srv_upload/upload.py
+
+
 import time
 from flask import Flask, request, jsonify
 import os
@@ -92,7 +95,9 @@ def upload():
     else:
         redis_client.rpush(redis_key, *new_order)
 
-    logger.info(f'Новые имена файлов: {new_order}')
+    logger.info(f'Новые имена файлов:')
+    for filename in new_order:
+        logger.info(f'  - {filename}')
     return jsonify(success=True, filenames=new_order)
 
 if __name__ == '__main__':
