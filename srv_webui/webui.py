@@ -225,7 +225,10 @@ def remove_image():
     Удаляет изображение из Redis и с диска.
     """
     logger.info("Запрос на удаление изображения.")
-    session_id = request.headers.get('X-Session-ID')
+
+    # Получаем Session ID
+    session_id = session['session_id']
+    #session_id = request.headers.get('X-Session-ID')
     if not session_id:
         logger.error("Session ID не найден в заголовках")
         return jsonify({'success': False, 'message': 'Session ID not found'}), 400
@@ -233,15 +236,16 @@ def remove_image():
     logger.info(f"Session ID: {session_id}")
     redis_key = f"session:{session_id}:order"
 
+    # Проверяем наличие записи в Redis
     if redis_client.exists(redis_key):
         image_name = request.form.get('image_name')
         if not image_name:
-            logger.error("Имя изображения не указано.")
+            logger.error("Имя изображения не указано!!!!!!!.")
             return jsonify({'success': False, 'message': 'Image name not specified'}), 400
 
         # Удаляем изображение из списка в Redis
         redis_client.lrem(redis_key, 0, image_name)
-        logger.info(f"Изображение {image_name} удалено из Redis.")
+        logger.info(f"Изображение {image_name} удалено из Redis.!!!!!!!!!111")
 
         # Формируем путь к файлу и пытаемся его удалить с диска
         file_path = os.path.join(uploads_root, session_id, image_name)
@@ -255,9 +259,12 @@ def remove_image():
         else:
             logger.warning(f"Файл {file_path} не найден на диске.")
     else:
-        logger.error("Session ID не найден в Redis.")
+        logger.error("Session ID не найден ")
         return jsonify({'success': False, 'message': 'Session ID not found'}), 400
 
+    # Вызавть новый порядок из get_order
+    order = get_order()
+    logger.info(f'Новый порядок изображений: {order}')
     return jsonify({'success': True})
 
 

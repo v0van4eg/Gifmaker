@@ -27,15 +27,6 @@ def allowed_file(filename):
 # Загрузка изображений
 @app.route('/upload', methods=['POST'])
 def upload():
-    """
-    Обрабатывает загрузку изображений.
-
-    Входные параметры:
-    - files: Файлы для загрузки
-
-    Возвращает:
-    - JSON с именами новых файлов или сообщение об ошибке
-    """
     session_id = request.headers.get('X-Session-ID')
     if not session_id:
         logger.error("Session ID не найден в заголовках")
@@ -88,7 +79,7 @@ def upload():
 
     logger.info(f'Новые имена файлов:')
     for filename in new_order:
-        logger.info(f'  - {filename}')
+        logger.info(f'  - {filename} ------\n')
     return jsonify(success=True, filenames=new_order)
 
 if __name__ == '__main__':
