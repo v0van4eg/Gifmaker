@@ -187,7 +187,6 @@ def upload():
     logger.info("Запрос на загрузку изображений.")
     session_id = session.get('session_id')
 
-
     logger.info(f"Session ID: {session_id}")
     files = request.files.getlist('files')
     if not files:
@@ -223,27 +222,43 @@ def upload():
 @app.route('/remove_image', methods=['POST'])
 def remove_image():
     """
-    Удаляет изображение.
+    Удаляет изображение из Redis и с диска.
     """
     logger.info("Запрос на удаление изображения.")
-    session_id = request.headers['X-Session-ID']
-    #session_id = request.headers.get('X-Session-ID')
+    session_id = request.headers.get('X-Session-ID')
+    if not session_id:
+        logger.error("Session ID не найден в заголовках")
+        return jsonify({'success': False, 'message': 'Session ID not found'}), 400
+
     logger.info(f"Session ID: {session_id}")
     redis_key = f"session:{session_id}:order"
+
     if redis_client.exists(redis_key):
         image_name = request.form.get('image_name')
-        if image_name:
-            redis_client.lrem(redis_key, 0, image_name)
-            logger.info(f"Изображение {image_name} удалено из Redis.")
-        else:
+        if not image_name:
             logger.error("Имя изображения не указано.")
             return jsonify({'success': False, 'message': 'Image name not specified'}), 400
+
+        # Удаляем изображение из списка в Redis
+        redis_client.lrem(redis_key, 0, image_name)
+        logger.info(f"Изображение {image_name} удалено из Redis.")
+
+        # Формируем путь к файлу и пытаемся его удалить с диска
+        file_path = os.path.join(uploads_root, session_id, image_name)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                logger.info(f"Файл {file_path} успешно удален с диска.")
+            except Exception as e:
+                logger.error(f"Ошибка при удалении файла {file_path}: {str(e)}")
+                return jsonify({'success': False, 'message': 'Error deleting file from disk'}), 500
+        else:
+            logger.warning(f"Файл {file_path} не найден на диске.")
     else:
-        logger.error("Session ID не найден.")
+        logger.error("Session ID не найден в Redis.")
         return jsonify({'success': False, 'message': 'Session ID not found'}), 400
 
     return jsonify({'success': True})
-    # TODO: Дописать роут /remove_image
 
 
 @app.route('/reorder_images', methods=['POST'])
@@ -288,10 +303,9 @@ def generate_gif():
 @app.route('/uploads/<session_id>/<path:filename>')
 def get_uploaded_file(session_id, filename):
     session_id = session.get('session_id')
-    #session_id = request.headers.get('X-Session-ID')
+    # session_id = request.headers.get('X-Session-ID')
     logger.debug(f'Returning file {filename} from session {session_id}')
     return send_from_directory(os.path.join(uploads_root, session_id), filename)
-
 
 
 if __name__ == '__main__':
