@@ -78,7 +78,7 @@ $(function () {
             imageContainer.empty();
             data.order.forEach((image) => {
                 let imageWrapper = $('<div>').addClass('image-wrapper');
-                let imgElement = $('<img>').attr('src', `/uploads/${session_id}/${image}?t=${Date.now()}`).addClass('draggable');
+                let imgElement = $('<img>').attr('src', `/uploads/${session_id}/${image}`).addClass('draggable');
                 let removeBtn = $('<button>').text('✖').addClass('remove-btn').data('image-name', image);
                 imageWrapper.append(removeBtn).append(imgElement);
                 imageContainer.append(imageWrapper);

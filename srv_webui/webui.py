@@ -101,47 +101,42 @@ def index():
     Отображает загруженные изображения и форму для создания GIF.
     """
     logger.info("Запрос на главную страницу.")
+
+    # Проверяем, есть ли session_id
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
         logger.info(f"Создан новый session_id: {session['session_id']}")
 
-        # Создаем папку для загрузки только при инициализации новой сессии
-        upload_folder = os.path.join(uploads_root, session['session_id'])
-        if not os.path.exists(upload_folder):
-            try:
-                os.makedirs(upload_folder, exist_ok=True)
-                logger.info(f"Папка для загрузки создана: {upload_folder}")
-            except Exception as e:
-                logger.error(f"Ошибка при создании папки: {e}")
-                return jsonify(error='Failed to create upload directory'), 500
-
     session_id = session['session_id']
     logger.debug(f"Используется session_id: {session_id}")
 
-    # Получаем список изображений из папки загрузки
     upload_folder = os.path.join(uploads_root, session_id)
-    order = []
-    if os.path.exists(upload_folder):
-        for f in os.listdir(upload_folder):
-            file_path = os.path.join(upload_folder, f)
-            if os.path.isfile(file_path) and allowed_file(f) and f != 'animation.gif':
-                order.append(f)
-                logger.debug(f"Загружено изображение: {f}")
+    if not os.path.exists(upload_folder):
+        try:
+            os.makedirs(upload_folder, exist_ok=True)
+            logger.info(f"Папка для загрузки создана: {upload_folder}")
+        except Exception as e:
+            logger.error(f"Ошибка при создании папки: {e}")
+            return jsonify(error='Failed to create upload directory'), 500
+
+    # Получаем список загруженных файлов из Redis
+    redis_key = f"session:{session_id}:order"
+    if redis_client.exists(redis_key):
+        order = redis_client.lrange(redis_key, 0, -1)
+        order = [item.decode('utf-8') for item in order]
+    else:
+        order = []
+
+    logger.info(f"Загруженные изображения: {order}")
 
     gif_file = os.path.join(upload_folder, 'animation.gif')
 
-    if request.method == 'POST':
-        files = request.files.getlist('files')
-        for file in files:
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file_path = os.path.join(upload_folder, filename)
-                file.save(file_path)
-                logger.debug(f"Файл {filename} сохранен в {file_path}")
-                order.append(filename)
-
-    logger.info("Рендеринг главной страницы.")
-    return render_template('index.html', images=order, gif_file=gif_file if os.path.exists(gif_file) else None)
+    return render_template(
+        'index.html',
+        session_id=session_id,  # Добавляем session_id для корректных ссылок
+        images=order,
+        gif_file=gif_file if os.path.exists(gif_file) else None
+    )
 
 
 @app.route('/new_session', methods=['GET'])
@@ -178,10 +173,10 @@ def new_session():
     return redirect(url_for('index'))
 
 
-@app.route('/uploads/<path:filename>', methods=['GET'])
-def get_uploaded_file(session_id, filename):
-    session_path = os.path.join(uploads_root, session_id)
-    return send_from_directory(session_path, filename)
+# @app.route('/uploads/<path:filename>', methods=['GET'])
+# def get_uploaded_file(session_id, filename):
+#     session_path = os.path.join(uploads_root, session_id)
+#     return send_from_directory(session_path, filename)
 
 
 @app.route('/upload', methods=['POST'])
@@ -190,7 +185,7 @@ def upload():
     Обрабатывает загрузку изображений.
     """
     logger.info("Запрос на загрузку изображений.")
-    session_id = session.get('session_id')
+    session_id = request.headers['X-Session-ID']
     if not session_id:
         logger.error("Session ID не найден.")
         return jsonify(error='Session ID not found'), 400
@@ -233,7 +228,8 @@ def remove_image():
     Удаляет изображение.
     """
     logger.info("Запрос на удаление изображения.")
-    session_id = request.headers.get('X-Session-ID')
+    session_id = request.headers['X-Session-ID']
+    #session_id = request.headers.get('X-Session-ID')
     logger.info(f"Session ID: {session_id}")
     redis_key = f"session:{session_id}:order"
     if redis_client.exists(redis_key):
@@ -256,7 +252,7 @@ def remove_image():
 def reorder_images():
     logger.info("Заглушка: запрос на изменение порядка изображений.")
     # session_id = request.headers.get('X-Session-ID')
-    session_id = session.get('session_id')
+    session_id = request.headers['X-Session-ID']
     logger.info(f"Session ID: {session_id}")
     redis_key = f"session:{session_id}:order"
     if redis_client.exists(redis_key):
@@ -289,6 +285,23 @@ def generate_gif():
 def ensure_session_id():
     if 'session_id' not in session:
         session['session_id'] = request.headers.get('X-Session-ID', str(uuid.uuid4()))
+
+
+@app.route('/uploads/<path:filename>')
+def get_uploaded_file(filename):
+    """
+    Возвращает загруженный файл.
+    Входные параметры:
+    - filename: Имя файла
+    Возвращает:
+    - Загруженный файл или сообщение об ошибке
+    """
+    session_id =     session_id = request.headers['X-Session-ID']
+    if not session_id:
+        logger.error("Session ID not found in get_uploaded_file.")
+        return "Session ID not found", 404
+    logger.debug(f'Returning file {filename} from session {session_id}')
+    return send_from_directory(os.path.join(uploads_root, session_id), filename)
 
 
 if __name__ == '__main__':
