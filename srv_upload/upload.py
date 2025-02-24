@@ -18,7 +18,7 @@ app.secret_key = 'your_secret_key'  # Секретный ключ для под�
 uploads_root = os.path.join(app.root_path, 'uploads')  # Путь к директории загрузок
 
 # Подключение к Redis
-redis_client = redis.Redis(host='redis', port=6379, db=0)
+redis_client = redis.Redis(host='cloud', port=6379, db=0)
 
 def allowed_file(filename):
     logger.debug(f"Проверка допустимости файла: {filename}")
@@ -79,7 +79,7 @@ def upload():
 
     logger.info(f'Новые имена файлов:')
     for filename in new_order:
-        logger.info(f'  - {filename} ------\n')
+        logger.info(f'  ------ {filename} ------')
     return jsonify(success=True, filenames=new_order)
 
 if __name__ == '__main__':

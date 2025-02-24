@@ -25,16 +25,13 @@ app.secret_key = 'your_secret_key'  # Секретный ключ для под�
 uploads_root = os.path.join(app.root_path, 'uploads')  # Путь к директории загрузок
 
 # Подключение к Redis
-redis_client = redis.Redis(host='redis', port=6379, db=0)
+redis_client = redis.Redis(host='cloud', port=6379, db=0)
 
 logger.debug("Подключение к Redis установлено.")
 
 
 # Фильтр допустимых форматов файлов
 def allowed_file(filename):
-    """
-    Проверяет, является ли файл допустимого типа.
-    """
     logger.debug(f"Проверка допустимости файла: {filename}")
     is_allowed = filename.lower().endswith(('png', 'jpg', 'jpeg', 'bmp', 'tiff'))
     logger.debug(f"Файл {filename} допустим: {is_allowed}")
@@ -42,10 +39,6 @@ def allowed_file(filename):
 
 
 def clean_uploads():
-    """
-    Очищает директорию загрузок.
-    Удаляет все файлы и папки в директории uploads при старте приложения.
-    """
     logger.info("Проверка наличия директории загрузок...")
     if os.path.exists(uploads_root):
         logger.info("Очистка старых загрузок...")
@@ -61,9 +54,9 @@ def clean_uploads():
         logger.info("Директория загрузок не найдена, очистка не требуется.")
 
 
+# Создает или возвращает session_id.
 @app.route('/get_session_id', methods=['GET'])
 def get_session_id():
-    """Создает или возвращает session_id."""
     logger.debug("Запрос на получение session_id.")
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
@@ -72,9 +65,9 @@ def get_session_id():
     return jsonify(session_id=session['session_id'])
 
 
+# Возвращает текущий порядок изображений из Redis.
 @app.route('/get_order', methods=['GET'])
 def get_order():
-    """Возвращает текущий порядок изображений из Redis."""
     logger.debug("Запрос на получение порядка изображений.")
     session_id = request.headers.get('X-Session-ID', session.get('session_id'))
     if not session_id:
@@ -94,14 +87,10 @@ def get_order():
         return jsonify(order=[])
 
 
+# Главная страница приложения.
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    """
-    Главная страница приложения.
-    Отображает загруженные изображения и форму для создания GIF.
-    """
     logger.info("Запрос на главную страницу.")
-
     # Проверяем, есть ли session_id
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
@@ -133,17 +122,15 @@ def index():
 
     return render_template(
         'index.html',
-        session_id=session_id,  # Добавляем session_id для корректных ссылок
+        session_id=session_id,
         images=order,
         gif_file=gif_file if os.path.exists(gif_file) else None
     )
 
 
+# Создает новую сессию и очищает старые данные.
 @app.route('/new_session', methods=['GET'])
 def new_session():
-    """
-    Создает новую сессию и очищает старые данные.
-    """
     logger.info("Запрос на создание новой сессии.")
     session_id = session.get('session_id')
     if session_id:
@@ -172,21 +159,11 @@ def new_session():
 
     return redirect(url_for('index'))
 
-
-# @app.route('/uploads/<path:filename>', methods=['GET'])
-# def get_uploaded_file(session_id, filename):
-#     session_path = os.path.join(uploads_root, session_id)
-#     return send_from_directory(session_path, filename)
-
-
+# Обрабатывает загрузку изображений.
 @app.route('/upload', methods=['POST'])
 def upload():
-    """
-    Обрабатывает загрузку изображений.
-    """
     logger.info("Запрос на загрузку изображений.")
     session_id = session.get('session_id')
-
     logger.info(f"Session ID: {session_id}")
     files = request.files.getlist('files')
     if not files:

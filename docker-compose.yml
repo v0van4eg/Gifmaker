@@ -25,3 +25,13 @@ services:
       - ./uploads:/app/uploads
 #    ports:
 #      - "5001:5001"
+#
+#  gifgenerator:
+#    build: ./srv_gifgenerator
+#    image: gifgenerator
+#    restart: always
+#    container_name: gifgenerator
+#    volumes:
+#      - ./uploads:/app/uploads
+##    ports:
+##      - "5002:5002"

@@ -29,6 +29,7 @@ def load_gitignore_rules(startpath):
     ignore_rules.append("__init__.py")
     ignore_rules.append("create_src.py")
     ignore_rules.append("main_old.py")
+    ignore_rules.append("uploads")
     return ignore_rules
 
 
