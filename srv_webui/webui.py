@@ -228,7 +228,7 @@ def remove_image():
 
     # Получаем Session ID
     session_id = session['session_id']
-    #session_id = request.headers.get('X-Session-ID')
+    # session_id = request.headers.get('X-Session-ID')
     if not session_id:
         logger.error("Session ID не найден в заголовках")
         return jsonify({'success': False, 'message': 'Session ID not found'}), 400
@@ -270,18 +270,36 @@ def remove_image():
 
 @app.route('/reorder_images', methods=['POST'])
 def reorder_images():
-    logger.info("Заглушка: запрос на изменение порядка изображений.")
-    # session_id = request.headers.get('X-Session-ID')
-    session_id = request.headers['X-Session-ID']
-    logger.info(f"Session ID: {session_id}")
-    # Читаем данные из Redis
+    logger.info("Запрос на изменение порядка изображений.")
+
+    session_id = session['session_id']
+    if not session_id:
+        return jsonify({'success': False, 'message': 'Session ID not found'}), 400
+
     redis_key = f"session:{session_id}:order"
-    if redis_client.exists(redis_key):
-        order = redis_client.lrange(redis_key, 0, -1)
-        order = [item.decode('utf-8') for item in order]
-    logger.info(f"Order: {order}")
-    return jsonify({'success': True})
-    # TODO: Дописать роут /reorder_images
+    if not redis_client.exists(redis_key):
+        return jsonify({'success': False, 'message': 'No images found for session'}), 400
+
+    # Читаем новый порядок изображений
+    image_order_json = request.form.get('image_order')
+    if not image_order_json:
+        return jsonify({'success': False, 'message': 'No image order provided'}), 400
+
+    try:
+        new_order = json.loads(image_order_json)
+        new_order = [new_order[key] for key in sorted(new_order.keys(), key=int)]
+    except Exception as e:
+        logger.error(f"Ошибка при обработке порядка изображений: {str(e)}")
+        return jsonify({'success': False, 'message': 'Invalid image order format'}), 400
+
+    # Обновляем порядок файлов в Redis
+    redis_client.delete(redis_key)
+    redis_client.rpush(redis_key, *new_order)
+
+    logger.info(f"Новый порядок сохранен в Redis: {new_order}")
+    return jsonify({'success': True, 'new_order': new_order})
+
+    # TODO: Улучшить логирование
 
 
 @app.route('/generate_gif', methods=['POST'])
@@ -298,13 +316,6 @@ def generate_gif():
         # Здесь можно использовать order для генерации GIF
         # TODO: Дописать роут /generate_gif
 
-
-
-# @app.before_request
-# def ensure_session_id():
-#     if 'session_id' not in session:
-#         session['session_id'] = request.headers.get('X-Session-ID', str(uuid.uuid4()))
-#
 
 @app.route('/uploads/<session_id>/<path:filename>')
 def get_uploaded_file(session_id, filename):
