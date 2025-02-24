@@ -23,11 +23,9 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Секретный ключ для подписи сессии
 uploads_root = os.path.join(app.root_path, 'uploads')  # Путь к директории загрузок
-
 # Подключение к Redis
-redis_client = redis.Redis(host='cloud', port=6379, db=0)
-
-logger.debug("Подключение к Redis установлено.")
+redis_client = redis.Redis(host='redis', port=6379, db=0)
+logger.info("Подключение к Redis установлено.")
 
 
 # Фильтр допустимых форматов файлов
@@ -59,7 +57,7 @@ def clean_uploads():
 def get_session_id():
     logger.debug("Запрос на получение session_id.")
     if 'session_id' not in session:
-        session['session_id'] = str(uuid.uuid4())
+        session['session_id'] = str(uuid.uuid4())[-6:]
         logger.info(f"Создан новый session_id: {session['session_id']}")
     logger.debug(f"Возвращаем session_id: {session['session_id']}")
     return jsonify(session_id=session['session_id'])
@@ -93,7 +91,7 @@ def index():
     logger.info("Запрос на главную страницу.")
     # Проверяем, есть ли session_id
     if 'session_id' not in session:
-        session['session_id'] = str(uuid.uuid4())
+        session['session_id'] = get_session_id()
         logger.info(f"Создан новый session_id: {session['session_id']}")
 
     session_id = session['session_id']
@@ -144,7 +142,7 @@ def new_session():
     session.pop('order', None)
 
     # Генерируем новый session_id
-    new_session_id = str(uuid.uuid4())
+    new_session_id = str(uuid.uuid4())[-6:]
     session['session_id'] = new_session_id
     logger.info(f"Создан новый session_id: {new_session_id}")
 
@@ -332,9 +330,6 @@ def generate_gif():
     except Exception as e:
         logger.error(f"Ошибка при отправке запроса в srv_gifgenerator: {str(e)}")
         return jsonify(error='Internal server error'), 500
-
-
-# TODO: Дописать роут /generate_gif
 
 
 @app.route('/uploads/<session_id>/<path:filename>')
