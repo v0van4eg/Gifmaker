@@ -26,9 +26,6 @@
         </form>
         <div id="image-container">
            {% for image in order %}
-<!--            <div class="image-wrapper">-->
-<!--                <img src="{{ url_for('static', filename='uploads/' + session['session_id'] + '/' + image) }}" alt="{{ image }}">                <button class="remove-btn" data-image-name="{{ image }}">✖</button>-->
-<!--            </div>-->
                 <div class="image-wrapper">
                     <img src="{{ url_for('get_uploaded_file', session_id=session_id, filename=image) }}" alt="{{ image }}">                    <button class="remove-btn" data-image-name="{{ image }}">✖</button>
                 </div>
@@ -39,15 +36,15 @@
     <section class="right-column">
         <form id="generate-form" method="post" action="{{ url_for('generate_gif') }}">
             <label for="duration">Длительность кадра (мс):</label>
-            <input type="number" name="duration" id="duration" min="10" value="300">
+            <input type="number" name="duration" id="duration" min="10" value="150">
             <label for="loop">Количество циклов:</label>
             <input type="number" name="loop" id="loop" min="0" value="0">
             <label for="resize">Размер (ШxВ):</label>
-            <input type="text" name="resize" id="resize" placeholder="320x240">
+            <input type="text" name="resize" id="resize" placeholder="640x480" value="640x480">
             <div class="button-container">
                 <input type="submit" value="Создать GIF" class="btn">
                 {% if gif_file %}
-                    <a href="{{ url_for('get_uploaded_file', filename='animation.gif') }}" download="animation.gif" class="btn">Скачать GIF</a>
+                    <a href="{{ url_for('get_uploaded_file', session_id=session_id, filename='animation.gif') }}" download="animation.gif" class="btn">Скачать GIF</a>
                 {% endif %}
             </div>
         </form>
@@ -56,9 +53,9 @@
         </div>
         <div id="gif-container">
             {% if gif_file %}
-                <img src="{{ url_for('get_uploaded_file', filename='animation.gif') }}" alt="GIF" id="gif-image">
+                <img src="{{ url_for('get_uploaded_file', session_id=session_id, filename='animation.gif') }}" alt="GIF" id="gif-image">
             {% endif %}
-        </div>
+</div>
     </section>
 </main>
 <footer>

@@ -159,6 +159,7 @@ def new_session():
 
     return redirect(url_for('index'))
 
+
 # Обрабатывает загрузку изображений.
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -276,22 +277,64 @@ def reorder_images():
     logger.info(f"Новый порядок сохранен в Redis: {new_order}")
     return jsonify({'success': True, 'new_order': new_order})
 
-    # TODO: Улучшить логирование
 
-
+# Маршрут на генерацию gif
 @app.route('/generate_gif', methods=['POST'])
 def generate_gif():
-    session_id = request.headers.get('X-Session-ID')
+    logger.info("Отправляем запрос на генерацию GIF.")
+    # session_id = request.headers.get('X-Session-ID')
+    session_id = session['session_id']
     if not session_id:
         return jsonify(error='Session ID not found'), 400
-
+    logger.info(f"Передаём Session ID: {session_id}")
     redis_key = f"session:{session_id}:order"
-    if redis_client.exists(redis_key):
-        order = redis_client.lrange(redis_key, 0, -1)
-        order = [item.decode('utf-8') for item in order]
-        logger.info(f"Передаём порядок изображений: {order}")
-        # Здесь можно использовать order для генерации GIF
-        # TODO: Дописать роут /generate_gif
+    if not redis_client.exists(redis_key):
+        return jsonify(error='Не найдено записи в Redis'), 400
+
+    order = redis_client.lrange(redis_key, 0, -1)
+    order = [item.decode('utf-8') for item in order]
+    logger.info(f"Получен порядок изображений из Redis: {order}")
+    for img in order:
+        logger.info(f"Изображение: -- {img}")
+
+    # Получаем параметры для генерации GIF из формы запроса
+    duration = int(request.form.get('duration', 150))  # Длительность кадра в миллисекундах
+    loop = int(request.form.get('loop', 0))  # Количество циклов (0 для бесконечного цикла)
+    resize = request.form.get('resize')  # Размер изображения (например, "320x240")
+
+    # Подготавливаем данные для отправки в микросервис srv_gifgenerator
+    gifgen_url = 'http://gifgenerator:5002/generate_gif'
+    headers = {'X-Session-ID': session_id}
+    data = {
+        'duration': duration,
+        'loop': loop,
+        'resize': resize,
+        'image_order': json.dumps({str(i): img for i, img in enumerate(order)})
+    }
+
+    try:
+        logger.debug(f"Отправка запроса в микросервис srv_gifgenerator: {gifgen_url}")
+        response = requests.post(gifgen_url, data=data, headers=headers)
+
+        if response.status_code == 200:
+            response_data = response.json()
+            if response_data.get('success'):
+                gif_url = response_data.get('gif_url')
+                logger.info(f"GIF успешно сгенерирован: {gif_url}")
+                return jsonify(success=True, gif_url=gif_url)
+            else:
+                error_msg = response_data.get('error', 'Unknown error')
+                logger.error(f"Ошибка при генерации GIF: {error_msg}")
+                return jsonify(error=error_msg), 500
+        else:
+            logger.error(f"Ошибка при запросе к srv_gifgenerator: {response.text}")
+            return jsonify(error='Failed to generate GIF'), response.status_code
+    except Exception as e:
+        logger.error(f"Ошибка при отправке запроса в srv_gifgenerator: {str(e)}")
+        return jsonify(error='Internal server error'), 500
+
+
+# TODO: Дописать роут /generate_gif
 
 
 @app.route('/uploads/<session_id>/<path:filename>')
