@@ -1,0 +1,5 @@
+---
+- include_tasks: install_glusterfs.yml
+
+- include_tasks: create_volume.yml
+  when: inventory_hostname in groups['managers']

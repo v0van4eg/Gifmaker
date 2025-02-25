@@ -1,0 +1,19 @@
+---
+- name: Инициализация swarm
+  community.docker.docker_swarm:
+    state: present
+    advertise_addr: "{{ advertise_addr }}"
+  register: token
+
+- name: Сохранение токенов
+  set_fact:
+    token_manager: "{{ token.swarm_facts.JoinTokens.Manager }}"
+    token_worker: "{{ token.swarm_facts.JoinTokens.Worker }}"
+    cacheable: true
+
+- name: print
+  debug:
+    msg: "token_manager {{ token.swarm_facts.JoinTokens.Manager }}"
+- name: print
+  debug:
+    msg: "token_worker {{ token.swarm_facts.JoinTokens.Worker }}"

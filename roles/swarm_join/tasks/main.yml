@@ -1,0 +1,18 @@
+#---
+#- name: Подключение
+#  community.docker.docker_swarm:
+#    state: join
+#    remote_addrs: "{{ advertise_addr }}"
+#    join_token: >
+#      {{
+#        hostvars['redc1.gradient.ru']['ansible_facts']['token_worker']
+#        if type == 'worker' else
+#        hostvars['redc1.gradient.ru']['ansible_facts']['token_manager']
+#      }}
+
+---
+- name: Подключение
+  community.docker.docker_swarm:
+    state: join
+    remote_addrs: "{{ advertise_addr }}"
+    join_token: "{{ hostvars['redc1.gradient.ru']['token_worker'] if type == 'worker' else hostvars['redc1.gradient.ru']['token_manager'] }}"

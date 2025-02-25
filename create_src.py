@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
 import os
 import fnmatch
+import argparse
 
 # Указываем имя выходного файла
 output_file_name = "Исходники.txt"
@@ -65,19 +67,18 @@ def list_directory_tree(startpath, report_file, ignore_rules, prefix=''):
             list_directory_tree(path, report_file, ignore_rules, prefix + extension)
 
 
-def create_directory_tree_report(output_file):
+def create_directory_tree_report(output_file, startpath):
     """Создаёт полный отчёт с деревом каталогов и содержимым всех файлов."""
-    current_dir = os.getcwd()
-    ignore_rules = load_gitignore_rules(current_dir)
+    ignore_rules = load_gitignore_rules(startpath)
 
     with open(output_file, 'w', encoding='utf-8') as report_file:
         # Записываем дерево каталогов
-        report_file.write(f"Дерево каталога: {current_dir}\n\n")
-        list_directory_tree(current_dir, report_file, ignore_rules)
+        report_file.write(f"Дерево каталога: {startpath}\n\n")
+        list_directory_tree(startpath, report_file, ignore_rules)
 
         # Собираем все файлы рекурсивно
         file_paths = []
-        for root, dirs, files in os.walk(current_dir):
+        for root, dirs, files in os.walk(startpath):
             # Фильтруем скрытые элементы и сортируем
             dirs[:] = sorted([d for d in dirs if not d.startswith('.')])
             files = sorted([f for f in files if not f.startswith('.')])
@@ -90,7 +91,7 @@ def create_directory_tree_report(output_file):
 
             for file in files:
                 full_path = os.path.join(root, file)
-                rel_path = os.path.relpath(full_path, current_dir)
+                rel_path = os.path.relpath(full_path, startpath)
 
                 # Пропускаем файлы, соответствующие правилам .gitignore
                 if is_ignored(rel_path, ignore_rules):
@@ -101,11 +102,15 @@ def create_directory_tree_report(output_file):
         # Добавляем содержимое файлов
         report_file.write("\n\nСОДЕРЖИМОЕ ФАЙЛОВ:\n")
         for rel_path in file_paths:
-            absolute_path = os.path.join(current_dir, rel_path)
+            absolute_path = os.path.join(startpath, rel_path)
             report_file.write(f"\n##################################### {rel_path} #####################################\n")
             report_file.write(get_file_content(absolute_path) + "\n")
 
 
 if __name__ == "__main__":
-    create_directory_tree_report(output_file_name)
+    parser = argparse.ArgumentParser(description="Создание отчёта о содержимом каталога.")
+    parser.add_argument('directory', nargs='?', default=os.getcwd(), help="Каталог для создания отчёта (по умолчанию текущий каталог).")
+    args = parser.parse_args()
+
+    create_directory_tree_report(output_file_name, args.directory)
     print(f"Полный отчёт сохранён в файл: {output_file_name}")

@@ -1,0 +1,6 @@
+---
+- name: Restart glusterd service
+  systemd:
+    name: glusterd
+    state: restarted
+    enabled: yes

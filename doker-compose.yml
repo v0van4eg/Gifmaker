@@ -1,0 +1,46 @@
+services:
+  api:
+    image: nginx
+    container_name: api
+    restart: always
+    volumes:
+      - ./api/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./uploads:/app/uploads
+    ports:
+      - "8050:80"
+
+
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+
+  webui:
+    build: ./srv_webui
+    image: webui
+    restart: always
+    container_name: webui
+    volumes:
+      - ./uploads:/app/uploads
+    ports:
+      - "5000:5000"
+
+  upload:
+    build: ./srv_upload
+    image: upload
+    restart: always
+    container_name: upload
+    volumes:
+      - ./uploads:/app/uploads
+
+
+  gifgenerator:
+    build: ./srv_gifgenerator
+    image: gifgenerator
+    restart: always
+    container_name: gifgenerator
+    volumes:
+      - ./uploads:/app/uploads

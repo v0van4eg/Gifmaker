@@ -1,0 +1,5 @@
+[glusterfs]
+name=GlusterFS Repository
+baseurl=https://download.gluster.org/pub/gluster/glusterfs/LATEST/CentOS/glusterfs,epel,$releasever,x86_64/
+gpgcheck=0
+enabled=1

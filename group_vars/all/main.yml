@@ -1,0 +1,18 @@
+---
+# Глобальные переменные для всех узлов
+brick_dir: "/GlusterData/brick1"
+mount_point: "/mnt/gvolume"
+volume_name: "gvolume"
+gluster_packages:
+  - glusterfs-server
+  - glusterfs-fuse
+  - glusterfs-libs
+  - glusterfs
+  - glusterfs-cli
+  - glusterfs-client-xlators
+  - libgfapi0
+glusterconfigs:
+  - "/var/lib/glusterd"
+  - "/etc/glusterfs"
+
+advertise_addr: 10.90.13.171

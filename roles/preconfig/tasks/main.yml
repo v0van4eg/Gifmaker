@@ -1,0 +1,36 @@
+---
+- name: Установка дополнительных пакетов
+  dnf:
+    name:
+      - curl
+      - python3-pip
+    state: present
+
+- name: Настройка дополнительных пакетов python
+  pip:
+    name: docker
+    state: present
+
+- name: Проверка live-restore включен или нет в Docker daemon configuration
+  shell: |
+    if grep -q '"live-restore":\s*true' /etc/docker/daemon.json; then
+      echo "enabled"
+    else
+      echo "disabled"
+    fi
+  register: live_restore_status
+  changed_when: false
+
+- name: Выключение live-restore в Docker daemon configuration
+  lineinfile:
+    path: /etc/docker/daemon.json
+    regexp: '"live-restore":\s*true'
+    state: absent
+  when: live_restore_status.stdout == "enabled"
+
+- name: Restart Docker daemon
+  systemd:
+    name: docker
+    state: restarted
+  when: live_restore_status.stdout == "enabled"
+

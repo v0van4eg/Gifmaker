@@ -1,0 +1,15 @@
+---
+dependencies: []
+galaxy_info:
+  author: your_name
+  description: Install and configure GlusterFS
+  company: Your Company
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: EL
+      versions:
+        - all
+  galaxy_tags:
+    - storage
+    - glusterfs

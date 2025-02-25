@@ -1,0 +1,18 @@
+---
+- name: Перевод в статус drain
+  community.docker.docker_node:
+    hostname: "{{ node_name }}"
+    availability: drain
+  delegate_to: "{{ groups['managers'][0] }}"  # Выполнить задачу на manager-узле
+
+- name: Ожидание остановки контейнеров
+  command: docker ps --quiet
+  register: result
+  retries: 30
+  delay: 2
+  until: result.stdout == ""
+  delegate_to: "{{ node_name }}"
+
+- name: Удаление ноды
+  command: "docker node rm {{ node_name }} --force"
+  delegate_to: "{{ groups['managers'][0] }}"  # Удаление выполняется на manager-узле

@@ -1,0 +1,95 @@
+---
+- name: Удаление пиров и очистка кластера
+  hosts: managers                 # Применяется только к управляющему узлу
+  become: yes                    # Выполнение задач с правами root
+  tasks:
+    - name: Удаление тома GlusterFS
+      gluster.gluster.gluster_volume:
+        name: "{{ volume_name }}"  # Имя тома
+        state: absent             # Удаление тома
+      ignore_errors: yes          # Игнорировать ошибки, если том уже удален
+      run_once: true              # Задача выполняется только один раз
+
+    - name: Удаление всех пиров из кластера
+      gluster.gluster.gluster_peer:
+        state: absent            # Удаление пира
+        nodes: workers          # Все узлы, кроме себя
+      ignore_errors: yes         # Игнорировать ошибки, если пиры уже удалены
+
+- name: Очистка и удаление GlusterFS
+  hosts: all                     # Применяется ко всем узлам
+  become: yes                    # Выполнение задач с правами root
+  tasks:
+    - name: Остановка тома GlusterFS
+      gluster.gluster.gluster_volume:
+        name: "{{ volume_name }}"  # Имя тома
+        state: stopped             # Удаление тома
+      ignore_errors: yes          # Игнорировать ошибки, если том уже удален
+      run_once: true              # Задача выполняется только один раз
+
+    - name: Удаление тома GlusterFS
+      gluster.gluster.gluster_volume:
+        name: "{{ volume_name }}"  # Имя тома
+        state: absent             # Удаление тома
+      ignore_errors: yes          # Игнорировать ошибки, если том уже удален
+
+    - name: Поиск процессов, использующих /mnt/gvolume
+      shell: |
+        lsof | grep /mnt/gvolume | awk '{print $2}' | uniq
+      register: lsof_output
+      ignore_errors: yes  # Игнорировать ошибки, если процессов нет
+
+    - name: Завершение процессов
+      shell: |
+        kill {{ item }}
+      loop: "{{ lsof_output.stdout_lines }}"
+      when: lsof_output.stdout_lines | length > 0  # Выполнять только если есть процессы
+      ignore_errors: yes  # Игнорировать ошибки, если процессы уже завершены
+
+    - name: Размонтирование тома на всех узлах
+      mount:
+        path: "{{ mount_point }}"  # Точка монтирования
+        src: "{{ inventory_hostname }}:{{ volume_name }}"  # Источник монтирования (GlusterFS-том)
+        fstype: glusterfs          # Тип файловой системы
+        state: unmounted             # Монтирование тома
+      delegate_to: "{{ item }}"    # Делегирование задачи на каждый узел
+      loop: "{{ groups['all'] }}"  # Цикл по всем узлам из группы hosts
+
+    - name: Размонтирование тома на всех узлах
+      mount:
+        path: "{{ mount_point }}"  # Точка монтирования
+        src: "{{ inventory_hostname }}:{{ volume_name }}"  # Источник монтирования (GlusterFS-том)
+        fstype: glusterfs          # Тип файловой системы
+        state: absent             # Монтирование тома
+      delegate_to: "{{ item }}"    # Делегирование задачи на каждый узел
+      loop: "{{ groups['all'] }}"  # Цикл по всем узлам из группы hosts
+
+    - name: Удаление директории точки монтирования
+      file:
+        path: "{{ mount_point }}"
+        state: absent            # Удаление директории
+
+    - name: Остановка и отключение службы glusterd
+      systemd:
+        name: glusterd
+        state: stopped           # Остановка службы
+        enabled: no              # Отключение автозапуска
+      ignore_errors: true          # Игнорировать ошибки, если службы уже остановлены
+
+    - name: Удаление пакетов GlusterFS
+      ansible.builtin.dnf:
+        name: "glusterfs*"
+        state: absent            # Удаление пакетов
+
+    - name: Удаление директории brick
+      file:
+        path: "{{ brick_dir }}"
+        state: absent
+
+    - name: Удаление конфигурационных файлов GlusterFS
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ glusterconfigs }}"
+      tags: confrm
+
