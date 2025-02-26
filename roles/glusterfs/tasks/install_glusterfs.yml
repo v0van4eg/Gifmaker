@@ -1,10 +1,4 @@
 ---
-#- name: Add GlusterFS repository
-#  copy:
-#    src: glusterfs.repo
-#    dest: /etc/yum.repos.d/glusterfs.repo
-#  when: ansible_os_family == 'RedHat'
-
 - name: Install GlusterFS packages
   package:
     name: glusterfs-server

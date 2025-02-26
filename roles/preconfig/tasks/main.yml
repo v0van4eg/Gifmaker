@@ -11,6 +11,21 @@
     name: docker
     state: present
 
+- name: Создаём daemon.json
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "journald",
+        "icc": false,
+        "disable-validation": true,
+        "bip": "10.99.0.1/16",
+        "fixed-cidr": "10.99.0.0/16",
+        "insecure-registries": ["http://redc1:4000"]
+      }
+    mode: '0644'
+  notify: Restart Docker
+
 - name: Проверка live-restore включен или нет в Docker daemon configuration
   shell: |
     if grep -q '"live-restore":\s*true' /etc/docker/daemon.json; then
@@ -28,9 +43,8 @@
     state: absent
   when: live_restore_status.stdout == "enabled"
 
-- name: Restart Docker daemon
-  systemd:
-    name: docker
-    state: restarted
-  when: live_restore_status.stdout == "enabled"
+
+
+
+
 

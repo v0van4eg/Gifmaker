@@ -16,3 +16,20 @@ glusterconfigs:
   - "/etc/glusterfs"
 
 advertise_addr: 10.90.13.171
+node_name: "{{ groups['workers'] }}"
+
+registry_name: "/redc1:4000/"
+network_name: "gifmaker"
+services:
+  - name: upload
+    version: "latest"
+  - name: webui
+    version: "latest"
+  - name: gifgenerator
+    version: "latest"
+  - api
+  - redis
+
+non_build_services:
+  - api
+  - redis

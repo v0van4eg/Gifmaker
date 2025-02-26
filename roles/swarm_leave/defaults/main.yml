@@ -1,0 +1,4 @@
+---
+# Умолчания для роли
+swarm_manager: "{{ groups['managers'][0] }}"
+swarm_nodes: "{{ groups['workers'] }}"

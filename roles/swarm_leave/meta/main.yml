@@ -1,0 +1,25 @@
+---
+# metadata for the role
+galaxy_info:
+  role_name: remove_swarm_cluster
+  author: Your Name
+  description: A role to completely remove a Docker Swarm cluster.
+  company: Your Company
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: EL
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all
+  galaxy_tags:
+    - docker
+    - swarm
+    - cleanup
+
+dependencies: []

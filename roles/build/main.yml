@@ -1,0 +1,22 @@
+---
+- name: Клонируем репозиторий git
+  ansible.builtin.git:
+    repo: "https://github.com/v0van4eg/Gifmaker.git"
+    dest: "{{ git_folder }}"
+    version: ms_redis
+
+- name: Собираем образ Docker
+  community.docker.docker_image:
+    name: "{{ registry_name }}{{ item }}"
+    tag: "{{ item.latest }}"
+    push: true
+    build:
+      path: "{{ git_folder }}"
+      dockerfile: "{{ git_folder }}/{{ item }}/Dockerfile"
+    source: build
+  loop: " {{ services | difference(non_build_services) }}"
+
+- name: Удаляем репозиторий
+  file:
+    path: "{{ git_folder }}"
+    state: absent

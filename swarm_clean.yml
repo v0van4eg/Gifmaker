@@ -1,0 +1,64 @@
+---
+- name: Remove Docker Swarm Cluster
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Ensure all nodes are in drain mode
+      community.docker.docker_node:
+        hostname: "{{ item }}"
+        availability: drain
+      delegate_to: "{{ groups['managers'][0] }}"
+      loop: "{{ groups['workers'] }}"
+      ignore_errors: true
+
+    - name: Wait for containers to stop on each node
+      command: docker ps --quiet
+      register: result
+      retries: 5
+      delay: 10
+      until: result.stdout == ""
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['workers'] }}"
+
+    - name: Get swarm info
+      community.docker.docker_swarm_info:
+      register: swarm_info
+      delegate_to: "{{ groups['managers'][0] }}"
+
+    - name: Fail if any worker node is not in down state
+      fail:
+        msg: "Node {{ item }} is not in down state and cannot be removed."
+      when: "'{{ item }}' in swarm_info.nodes and swarm_info.nodes[item].status != 'down'"
+      loop: "{{ groups['workers'] }}"
+
+    - name: Remove worker nodes from the swarm
+      community.docker.docker_swarm:
+        state: remove
+        node_id: "{{ item }}"
+      delegate_to: "{{ groups['managers'][0] }}"
+      loop: "{{ groups['workers'] }}"
+      when: "'{{ item }}' in swarm_info.nodes and swarm_info.nodes[item].status == 'down'"
+
+    - name: Leave the swarm on manager nodes
+      community.docker.docker_swarm:
+        state: absent
+        force: true
+      when: inventory_hostname in groups['managers']
+
+    - name: Stop and disable docker service
+      ansible.builtin.service:
+        name: docker
+        state: stopped
+        enabled: false
+
+    - name: Remove Docker configuration files
+      ansible.builtin.file:
+        path: /var/lib/docker
+        state: absent
+      become: yes
+
+    - name: Remove Docker Swarm configuration files
+      ansible.builtin.file:
+        path: /etc/docker/daemon.json
+        state: absent
+      become: yes

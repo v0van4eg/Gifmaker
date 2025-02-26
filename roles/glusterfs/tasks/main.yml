@@ -2,4 +2,7 @@
 - include_tasks: install_glusterfs.yml
 
 - include_tasks: create_volume.yml
-  when: inventory_hostname in groups['managers']
+  when: inventory_hostname in groups['managers'][0]
+
+- include_tasks: add_peers.yml
+  when: inventory_hostname in groups['managers'][0]

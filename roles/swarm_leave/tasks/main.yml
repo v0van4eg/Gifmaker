@@ -1,18 +1,32 @@
 ---
+
 - name: Перевод в статус drain
   community.docker.docker_node:
     hostname: "{{ node_name }}"
     availability: drain
   delegate_to: "{{ groups['managers'][0] }}"  # Выполнить задачу на manager-узле
+  ignore_errors: true
 
 - name: Ожидание остановки контейнеров
   command: docker ps --quiet
   register: result
-  retries: 30
-  delay: 2
+  retries: 3
+  delay: 3
   until: result.stdout == ""
-  delegate_to: "{{ node_name }}"
+  delegate_to: "{{ groups['managers'][0] }}"
 
-- name: Удаление ноды
-  command: "docker node rm {{ node_name }} --force"
+- name: Remove node from swarm
+  community.docker.docker_swarm:
+    state: remove
+    node_id: "{{ groups['workers'] }}"
+
+- name: Remove a swarm manager
+  community.docker.docker_swarm:
+    state: absent
+    force: true
   delegate_to: "{{ groups['managers'][0] }}"  # Удаление выполняется на manager-узле
+
+# Закомментированный вариант удаления ноды через командную строку
+#    - name: Удаление ноды через командную строку (альтернативный способ)
+#      command: "docker node rm {{ node_name }} --force"
+#      delegate_to: "{{ groups['managers'][0] }}"  # Удаление выполняется на manager-узле

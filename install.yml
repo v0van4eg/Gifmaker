@@ -1,8 +1,11 @@
+---
 - name: Deploy / build server
-  hosts: deploy
+  hosts: deploy,workers
   roles:
     - role: preconfig
       tags: preconfig
+    - role: glusterfs
+      tags: glusterfs
 #    - role: build
 #      tags: build
 #    - role: deploy
@@ -16,21 +19,21 @@
 - name: Manager
   hosts: managers
   roles:
-    - role: preconfig
-      tags: preconfig
-    - role: glusterfs
-      tags: glusterfs
-#    - role: swarm_join
-#      type: manager
-#      tags: swarm_join
+#    - role: preconfig
+#      tags: preconfig
+
+    - role: swarm_init
+      tags: swarm_init
 
 - name: Worker
   hosts: workers
   roles:
-    - role: preconfig
-      tags: preconfig
-    - role: glusterfs
-      tags: glusterfs
-#    - role: swarm_join
-#      type: worker
-#      tags: swarm_join
+    - role: swarm_join
+      type: worker
+      tags: swarm_join
+
+#    - role: swarm_leave
+#      tags: swarm_leave
+
+
+

@@ -39,6 +39,9 @@
       register: lsof_output
       ignore_errors: yes  # Игнорировать ошибки, если процессов нет
 
+    - debug:
+        msg: "{{ lsof_output.stdout_lines }}"  # Выводим список процессов
+
     - name: Завершение процессов
       shell: |
         kill {{ item }}

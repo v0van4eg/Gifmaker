@@ -1,23 +1,19 @@
 ---
-- name: Create GlusterFS volume
-  command: >
-    gluster volume create {{ glusterfs_volume_name }} replica 3 {{ groups['workers'] | join(':/') }}{{ glusterfs_bricks[0] }}
-  register: volume_create_result
-  changed_when: "'Volume creation successful' in volume_create_result.stdout"
-  tags: create
+- name: Создание тома GlusterFS
+  gluster.gluster.gluster_volume:
+    name: "{{ volume_name }}"  # Имя тома
+    state: present             # Создание тома
+    replicas: 3                # Репликация на 3 узла
+    bricks: "{{ brick_dir }}"  # Директория для хранения данных
+    cluster: "{{ groups['all'] }}"  # Узлы кластера из группы hosts
+    force: true                # Принудительное создание тома
+  run_once: true               # Задача выполняется только один раз
 
-- name: Start GlusterFS volume
-  command: gluster volume start {{ glusterfs_volume_name }}
-  when: "'Volume creation successful' in volume_create_result.stdout"
-  tags: create
-
-- name: Mount GlusterFS volume
+- name: Монтирование тома на всех узлах
   mount:
-    path: "{{ glusterfs_mount_point }}"
-    src: "{{ item }}"
-    fstype: glusterfs
-    opts: defaults,_netdev
-    state: mounted
-  with_items:
-    - "{{ groups['managers'][0] }}:{{ glusterfs_volume_name }}"
-  tags: create
+    path: "{{ mount_point }}"  # Точка монтирования
+    src: "{{ inventory_hostname }}:{{ volume_name }}"  # Источник монтирования (GlusterFS-том)
+    fstype: glusterfs          # Тип файловой системы
+    state: mounted             # Монтирование тома
+  delegate_to: "{{ item }}"    # Делегирование задачи на каждый узел
+  loop: "{{ groups['all'] }}"  # Цикл по всем узлам из группы hosts
