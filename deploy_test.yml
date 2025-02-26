@@ -1,0 +1,23 @@
+version: '3'
+services:
+  test:
+    image: nginx
+    volumes:
+      - /mnt/gvolume/test:/app/test
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+
+
+    - name: Update Docker daemon configuration with insecure registry
+      lineinfile:
+        path: /etc/docker/daemon.json
+        create: true
+        regexp: '"insecure-registries"'
+        line: '"insecure-registries": ["http://redc1:4000"]'
+        insertafter: EOF
+        state: present
+
+
