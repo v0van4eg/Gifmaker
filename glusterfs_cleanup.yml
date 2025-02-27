@@ -14,6 +14,7 @@
       gluster.gluster.gluster_peer:
         state: absent            # Удаление пира
         nodes: workers          # Все узлы, кроме себя
+        force: yes               # Принудительное удаление пиров
       ignore_errors: yes         # Игнорировать ошибки, если пиры уже удалены
 
 - name: Очистка и удаление GlusterFS

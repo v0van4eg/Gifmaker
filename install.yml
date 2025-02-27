@@ -6,8 +6,8 @@
       tags: preconfig
     - role: glusterfs
       tags: glusterfs
-#    - role: build
-#      tags: build
+    - role: build
+      tags: build
 #    - role: deploy
 #      tags: deploy
 #    - role: swarm_init
