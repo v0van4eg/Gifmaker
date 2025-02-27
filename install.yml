@@ -15,12 +15,12 @@
 #    - role: swarm_init
 #      tags: swarm_init
 
-- name: Присоединение к swarm
-  hosts: workers
-  roles:
-    - role: swarm_join
-      type: worker
-      tags: swarm_join
+#- name: Присоединение к swarm
+#  hosts: workers
+#  roles:
+#    - role: swarm_join
+#      type: worker
+#      tags: swarm_join
 
 - name: Сборка и выкладка
   hosts: deploy

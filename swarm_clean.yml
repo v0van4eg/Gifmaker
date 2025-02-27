@@ -36,6 +36,12 @@
       when: "'{{ item }}' in swarm_info.nodes and swarm_info.nodes[item].status != 'down'"
       loop: "{{ groups['workers'] }}"
 
+    - name: Leave the swarm on worker nodes
+      community.docker.docker_swarm:
+        state: absent
+        force: true
+      when: inventory_hostname in groups['workers']
+
     - name: Remove worker nodes from the swarm
       community.docker.docker_swarm:
         state: remove
