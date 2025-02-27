@@ -8,19 +8,6 @@
       tags: glusterfs
     - role: swarm_init
       tags: swarm_init
-#
-#- name: Инициализация swarm
-#  hosts: groups(managers)[0]
-#  roles:
-#    - role: swarm_init
-#      tags: swarm_init
-
-#- name: Присоединение к swarm
-#  hosts: workers
-#  roles:
-#    - role: swarm_join
-#      type: worker
-#      tags: swarm_join
 
 - name: Сборка и выкладка
   hosts: deploy
@@ -29,10 +16,6 @@
       tags: build
     - role: deploy
       tags: deploy
-
-
-#    - role: swarm_leave
-#      tags: swarm_leave
 
 
 

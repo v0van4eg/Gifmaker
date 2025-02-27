@@ -1,0 +1,40 @@
+---
+- name: Deactivate Docker Swarm mode and remove nodes from the cluster
+  hosts: all
+  become: yes
+  tasks:
+    - name: Drain worker nodes (if they are workers)
+      shell: docker node update --availability drain {{ inventory_hostname }}
+      when: inventory_hostname in groups['workers']
+      ignore_errors: yes
+
+    - name: Drain manager nodes (if they are managers)
+      shell: docker node update --availability drain {{ inventory_hostname }}
+      when: inventory_hostname in groups['managers']
+      ignore_errors: yes
+
+    - name: Remove all Docker services (if any)
+      shell: docker service ls -q | xargs -r docker service rm
+      when: swarm_state.rc == 0
+      ignore_errors: yes
+
+    - name: Leave Swarm cluster (for workers)
+      shell: docker swarm leave --force
+      when: inventory_hostname in groups['workers']
+      ignore_errors: yes
+
+    - name: Force leave Swarm cluster (for managers)
+      shell: docker swarm leave --force
+      when: inventory_hostname in groups['managers']
+      ignore_errors: yes
+
+    - name: Remove Swarm data (optional)
+      file:
+        path: /var/lib/docker/swarm
+        state: absent
+      ignore_errors: yes
+
+    - name: Restart Docker service (optional)
+      service:
+        name: docker
+        state: restarted

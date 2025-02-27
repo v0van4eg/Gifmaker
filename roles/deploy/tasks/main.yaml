@@ -2,7 +2,7 @@
 - name: Создание сети Docker
   community.docker.docker_network:
     name: "{{ network_name }}"
-    driver: overlay
+
 
 - name: Выкладка сервисов в Docker
   include_tasks: "../services/ {{ item }}/service.yml"
