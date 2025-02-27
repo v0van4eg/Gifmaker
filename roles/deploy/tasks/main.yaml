@@ -5,5 +5,5 @@
     driver: overlay
 
 - name: Выкладка сервисов в Docker
-  include: "../services/ {{ item }}/service.yml"
+  include_tasks: "../services/ {{ item }}/service.yml"
   loop: "{{ services }}"

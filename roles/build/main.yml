@@ -20,3 +20,4 @@
   file:
     path: "{{ git_folder }}"
     state: absent
+

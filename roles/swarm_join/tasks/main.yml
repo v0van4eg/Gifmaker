@@ -1,18 +1,13 @@
-#---
-#- name: Подключение
-#  community.docker.docker_swarm:
-#    state: join
-#    remote_addrs: "{{ advertise_addr }}"
-#    join_token: >
-#      {{
-#        hostvars['redc1.gradient.ru']['ansible_facts']['token_worker']
-#        if type == 'worker' else
-#        hostvars['redc1.gradient.ru']['ansible_facts']['token_manager']
-#      }}
-
 ---
+- name: Печатаем токены
+  debug:
+    msg: "token_manager {{ token.swarm_facts.JoinTokens.Manager }}"
+- name: print
+  debug:
+    msg: "token_worker {{ token.swarm_facts.JoinTokens.Worker }}"
+
 - name: Подключение
   community.docker.docker_swarm:
     state: join
     remote_addrs: "{{ advertise_addr }}"
-    join_token: "{{ hostvars['redc1.gradient.ru']['token_worker'] if type == 'worker' else hostvars['redc1.gradient.ru']['token_manager'] }}"
+    join_token: "{{ hostvars['redc1.gradient.ru']['token_worker'] }}"

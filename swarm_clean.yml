@@ -20,10 +20,15 @@
       delegate_to: "{{ item }}"
       loop: "{{ groups['workers'] }}"
 
-    - name: Get swarm info
+    - name: Get swarm info and list of registered nodes
       community.docker.docker_swarm_info:
+        nodes: true
       register: swarm_info
       delegate_to: "{{ groups['managers'][0] }}"
+
+    - name: Debug swarm info
+      debug:
+        var: swarm_info
 
     - name: Fail if any worker node is not in down state
       fail:
@@ -35,6 +40,7 @@
       community.docker.docker_swarm:
         state: remove
         node_id: "{{ item }}"
+        force: true
       delegate_to: "{{ groups['managers'][0] }}"
       loop: "{{ groups['workers'] }}"
       when: "'{{ item }}' in swarm_info.nodes and swarm_info.nodes[item].status == 'down'"
@@ -44,21 +50,3 @@
         state: absent
         force: true
       when: inventory_hostname in groups['managers']
-
-    - name: Stop and disable docker service
-      ansible.builtin.service:
-        name: docker
-        state: stopped
-        enabled: false
-
-    - name: Remove Docker configuration files
-      ansible.builtin.file:
-        path: /var/lib/docker
-        state: absent
-      become: yes
-
-    - name: Remove Docker Swarm configuration files
-      ansible.builtin.file:
-        path: /etc/docker/daemon.json
-        state: absent
-      become: yes

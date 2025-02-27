@@ -17,3 +17,10 @@
 - name: print
   debug:
     msg: "token_worker {{ token.swarm_facts.JoinTokens.Worker }}"
+
+- name: Подключение узлов к swarm
+  community.docker.docker_swarm:
+    state: join
+    remote_addrs: "{{ advertise_addr }}"
+    join_token: "{{ hostvars['redc1.gradient.ru']['token_worker'] }}"
+  when: inventory_hostname != 'redc1.gradient.ru'
