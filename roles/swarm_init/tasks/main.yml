@@ -4,23 +4,28 @@
     state: present
     advertise_addr: "{{ advertise_addr }}"
   register: token
+  when: inventory_hostname == groups['managers'][0]
 
 - name: Сохранение токенов
   set_fact:
     token_manager: "{{ token.swarm_facts.JoinTokens.Manager }}"
     token_worker: "{{ token.swarm_facts.JoinTokens.Worker }}"
-    cacheable: true
+    cacheable: yes
+  when: inventory_hostname == groups['managers'][0]
 
-- name: print
+- name: Печать токена менеджера
   debug:
-    msg: "token_manager {{ token.swarm_facts.JoinTokens.Manager }}"
-- name: print
-  debug:
-    msg: "token_worker {{ token.swarm_facts.JoinTokens.Worker }}"
+    msg: "token_manager: {{ token_manager }}"
+  when: inventory_hostname == groups['managers'][0]
 
-- name: Подключение узлов к swarm
+- name: Печать токена worker
+  debug:
+    msg: "token_worker: {{ hostvars[groups['managers'][0]]['token_worker'] }}"
+  when: inventory_hostname in groups['workers']
+
+- name: Подключение worker к swarm
   community.docker.docker_swarm:
     state: join
     remote_addrs: "{{ advertise_addr }}"
-    join_token: "{{ hostvars['redc1.gradient.ru']['token_worker'] }}"
-  when: inventory_hostname != 'redc1.gradient.ru'
+    join_token: "{{ hostvars[groups['managers'][0]]['token_worker'] }}"
+  when: inventory_hostname in groups['workers']

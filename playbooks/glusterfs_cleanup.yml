@@ -13,7 +13,7 @@
     - name: Удаление всех пиров из кластера
       gluster.gluster.gluster_peer:
         state: absent            # Удаление пира
-        nodes: workers          # Все узлы, кроме себя
+        nodes: "{{ groups['workers'] }}"  # Все узлы, кроме себя
         force: yes               # Принудительное удаление пиров
       ignore_errors: yes         # Игнорировать ошибки, если пиры уже удалены
 
@@ -21,19 +21,6 @@
   hosts: all                     # Применяется ко всем узлам
   become: yes                    # Выполнение задач с правами root
   tasks:
-    - name: Остановка тома GlusterFS
-      gluster.gluster.gluster_volume:
-        name: "{{ volume_name }}"  # Имя тома
-        state: stopped             # Удаление тома
-      ignore_errors: yes          # Игнорировать ошибки, если том уже удален
-      run_once: true              # Задача выполняется только один раз
-
-    - name: Удаление тома GlusterFS
-      gluster.gluster.gluster_volume:
-        name: "{{ volume_name }}"  # Имя тома
-        state: absent             # Удаление тома
-      ignore_errors: yes          # Игнорировать ошибки, если том уже удален
-
     - name: Поиск процессов, использующих /mnt/gvolume
       shell: |
         lsof | grep /mnt/gvolume | awk '{print $2}' | uniq
@@ -55,16 +42,7 @@
         path: "{{ mount_point }}"  # Точка монтирования
         src: "{{ inventory_hostname }}:{{ volume_name }}"  # Источник монтирования (GlusterFS-том)
         fstype: glusterfs          # Тип файловой системы
-        state: unmounted             # Монтирование тома
-      delegate_to: "{{ item }}"    # Делегирование задачи на каждый узел
-      loop: "{{ groups['all'] }}"  # Цикл по всем узлам из группы hosts
-
-    - name: Размонтирование тома на всех узлах
-      mount:
-        path: "{{ mount_point }}"  # Точка монтирования
-        src: "{{ inventory_hostname }}:{{ volume_name }}"  # Источник монтирования (GlusterFS-том)
-        fstype: glusterfs          # Тип файловой системы
-        state: absent             # Монтирование тома
+        state: absent             # Размонтирование и удаление записи из /etc/fstab
       delegate_to: "{{ item }}"    # Делегирование задачи на каждый узел
       loop: "{{ groups['all'] }}"  # Цикл по всем узлам из группы hosts
 
@@ -80,10 +58,10 @@
         enabled: no              # Отключение автозапуска
       ignore_errors: true          # Игнорировать ошибки, если службы уже остановлены
 
-    - name: Удаление пакетов GlusterFS
-      ansible.builtin.dnf:
-        name: "glusterfs*"
-        state: absent            # Удаление пакетов
+#    - name: Удаление пакетов GlusterFS
+#      ansible.builtin.dnf:
+#        name: "glusterfs*"
+#        state: absent            # Удаление пакетов
 
     - name: Удаление директории brick
       file:
@@ -96,4 +74,3 @@
         state: absent
       loop: "{{ glusterconfigs }}"
       tags: confrm
-

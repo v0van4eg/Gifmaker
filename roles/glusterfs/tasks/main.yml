@@ -1,8 +1,50 @@
 ---
-- include_tasks: install_glusterfs.yml
+- name: Install GlusterFS packages
+  package:
+    name: glusterfs-server
+    state: present
+  tags: install
 
-- include_tasks: create_volume.yml
+- name: Start and enable glusterd service
+  systemd:
+    name: glusterd
+    state: started
+    enabled: yes
+  tags: install
+
+- name: Создание директории для glusterfs
+  file:
+    path: "{{ brick_dir }}"
+    state: directory
+
+- name: Создание директории для монтирования томов GlusterFS
+  file:
+    path: "{{ mount_point }}"
+    state: directory
+
+- name: Создание тома GlusterFS
+  gluster.gluster.gluster_volume:
+    name: "{{ volume_name }}"             # Имя тома
+    replicas: 3                           # Репликация на 3 узла
+    bricks: "{{ brick_dir }}"      # Директория для хранения данных
+    cluster: "{{ groups['all'] }}"        # Узлы кластера из группы hosts
+    force: true                           # Принудительное создание тома
+    state: present                        # Создание тома
+  run_once: true                          # Задача выполняется только один раз
   when: inventory_hostname in groups['managers'][0]
 
-- include_tasks: add_peers.yml
+- name: Добавление узлов в кластер (peer probe)
+  gluster.gluster.gluster_peer:
+    state: present
+    nodes: "{{ groups['workers'] }}"
+  run_once: true
   when: inventory_hostname in groups['managers'][0]
+
+- name: Монтирование тома на всех узлах
+  mount:
+    path: "{{ mount_point }}"                           # Точка монтирования
+    src: "{{ inventory_hostname }}:{{ volume_name }}"   # Источник монтирования (GlusterFS-том)
+    fstype: glusterfs                                   # Тип файловой системы
+    state: mounted                                      # Монтирование тома
+  delegate_to: "{{ item }}"                             # Делегирование задачи на каждый узел
+  loop: "{{ groups['all'] }}"                           # Цикл по всем узлам из группы hosts

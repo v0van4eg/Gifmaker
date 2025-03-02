@@ -12,6 +12,8 @@
 - name: Сборка и выкладка
   hosts: deploy
   roles:
+    - role: docker_registry
+      tags: registry
     - role: build
       tags: build
     - role: deploy

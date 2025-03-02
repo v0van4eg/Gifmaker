@@ -15,23 +15,22 @@ glusterconfigs:
   - "/var/lib/glusterd"
   - "/etc/glusterfs"
 
-advertise_addr: 10.90.13.171
+advertise_addr: 10.90.13.4
 node_name: "{{ groups['workers'] }}"
 
 registry_name: "/redc1:4000/"
 network_name: "gifmaker"
-docker_host: "unix:///var/run/docker.sock"  # Укажите правильный путь к вашему Docker daemon
 
 services:
-  - name: upload
+  - name: srv_upload
     version: "latest"
-  - name: webui
+  - name: srv_webui
     version: "latest"
-  - name: gifgenerator
+  - name: srv_gifgenerator
     version: "latest"
-  - api
+  - srv_api
   - redis
 
 non_build_services:
-  - api
+  - srv_api
   - redis

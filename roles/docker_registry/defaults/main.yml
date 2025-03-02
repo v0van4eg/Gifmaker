@@ -1,0 +1,6 @@
+# roles/docker_registry/defaults/main.yml
+---
+registry_version: "2"
+registry_image: "registry"
+registry_port: 4000
+registry_data_dir: "/registry-data"

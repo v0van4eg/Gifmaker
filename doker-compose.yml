@@ -4,11 +4,10 @@ services:
     container_name: api
     restart: always
     volumes:
-      - ./api/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./srv_api/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./uploads:/app/uploads
     ports:
       - "8050:80"
-
 
   redis:
     image: redis
@@ -16,7 +15,6 @@ services:
     restart: always
     ports:
       - "6379:6379"
-
 
   webui:
     build: ./srv_webui

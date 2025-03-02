@@ -1,6 +1,0 @@
----
-# Default variables for the role
-glusterfs_version: "latest"
-glusterfs_mount_point: "/mnt/datavol"
-glusterfs_volume_name: "datavol"
-glusterfs_bricks: ["/data/brick1", "/data/brick2", "/data/brick3"]

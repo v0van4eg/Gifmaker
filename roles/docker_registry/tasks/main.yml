@@ -1,0 +1,41 @@
+---
+- name: Создание директории для данных Docker Registry
+  file:
+    path: "{{ registry_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+#- name: Pull Docker Registry image
+#  community.docker.docker_image:
+#    name: "registry:{{ registry_version }}"
+#    source: pull
+
+- name: Create Docker Registry service in Docker Swarm
+  community.docker.docker_swarm_service:
+    name: registry
+    image: "registry:{{ registry_version }}"
+    state: present
+    networks:
+      - name: "{{ network_name }}"
+    publish:
+      - mode: ingress
+        protocol: tcp
+        published_port: "{{ registry_port }}"
+        target_port: 5000
+    env:
+      REGISTRY_HTTP_ADDR: ":5000"
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: "/var/lib/registry"
+    mounts:
+      - source: "{{ registry_data_dir }}"
+        target: "/var/lib/registry"
+        type: bind
+    restart_config:
+      condition: on-failure
+      delay: 5s
+      max_attempts: 3
+      window: 120s
+    placement:
+      constraints:
+        - node.role == manager
