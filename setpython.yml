@@ -1,0 +1,13 @@
+---
+- name: Set Python interpreter in ansible.cfg
+  hosts: all
+  tasks:
+  - name: Установка интерпретатора Python
+    community.general.ini_file:
+      path: /etc/ansible/ansible.cfg
+      section: defaults
+      option: interpreter_python
+      value: /usr/bin/python3
+      mode: '0655'
+      backup: true
+      
