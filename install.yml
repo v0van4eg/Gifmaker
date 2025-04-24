@@ -1,23 +1,27 @@
 ---
-- name: На всех серверах
-  hosts: all
+- name: Deploy server
+  hosts: deploy
   roles:
     - role: preconfig
       tags: preconfig
-    - role: glusterfs
-      tags: glusterfs
-    - role: swarm_init
-      tags: swarm_init
-
-- name: Сборка и выкладка
-  hosts: deploy
-  roles:
-    - role: docker_registry
-      tags: registry
-    - role: build
-      tags: build
     - role: deploy
       tags: deploy
+      test: "Тестовая переменная для проверки"
+#    - role: swarm_init
+#      tags: swarm_init
 
+- name: Manager
+  hosts: managers
+  roles:
+    - role: preconfig
+      tags: preconfig
+#    - role: swarm_join
+#      tags: swarm_join
 
-
+- name: Worker
+  hosts: workers
+  roles:
+    - role: preconfig
+      tags: preconfig
+#    - role: swarm_join
+#      tags: swarm_join

@@ -1,7 +1,7 @@
 import unittest
 import os
 from unittest.mock import MagicMock
-from srv_upload.upload import app, allowed_file, redis_client
+from src.srv_upload.upload import app, allowed_file, redis_client
 
 class TestUpload(unittest.TestCase):
     def setUp(self):
@@ -14,7 +14,7 @@ class TestUpload(unittest.TestCase):
 
     def test_upload_valid_files(self):
         # Создаем директорию для загрузки
-        upload_dir = '/home/poly/PycharmProjects/Gifmaker/srv_upload/uploads/test_session_id'
+        upload_dir = '/src/srv_upload/uploads/test_session_id'
         os.makedirs(upload_dir, exist_ok=True)
 
         with open('test.jpg', 'rb') as f:

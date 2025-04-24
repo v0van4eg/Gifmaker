@@ -1,45 +1,22 @@
 ---
-- name: Установка docker-ce
-  dnf:
-    name: docker-ce
-    state: present
-
-- name: Запуск docker
-  systemd:
-    name: docker
-    state: started
-    enabled: true
-
 - name: Установка дополнительных пакетов
   dnf:
     name:
       - curl
       - python3-pip
+      - docker-ce
+      - docker-compose
     state: present
 
-- name: Настройка дополнительных пакетов python
+- name: Проверка что Docker установлен и перезагружен
+  service:
+    name: docker
+    state: restarted
+    enabled: true
+
+- name: Установка pip пакетов
   pip:
     name: docker
     state: present
-
-#- name: Сохраняем текущий файл конфигурации docker
-#  copy:
-#    dest: /etc/docker/daemon.json.bak
-#    src: /etc/docker/daemon.json
-#    remote_src: true
-
-- name: Создаём daemon.json
-  copy:
-    dest: /etc/docker/daemon.json
-    content: |
-      {
-        "bip": "10.99.0.1/16",
-        "fixed-cidr": "10.99.0.0/16",
-        "insecure-registries": ["http://redc1:4000"]
-      }
-    mode: '0644'
-  notify: Restart Docker
-
-
 
 

@@ -4,8 +4,10 @@ services:
     container_name: api
     restart: always
     volumes:
-      - ./srv_api/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./src/srv_api/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./uploads:/app/uploads
+      - ./src/static:/app/static
+      - ./src/templates:/app/templates
     ports:
       - "8050:80"
 
@@ -17,17 +19,19 @@ services:
       - "6379:6379"
 
   webui:
-    build: ./srv_webui
+    build: src/srv_webui
     image: webui
     restart: always
     container_name: webui
     volumes:
       - ./uploads:/app/uploads
+      - ./src/static:/app/static
+      - ./src/templates:/app/templates
     ports:
       - "5000:5000"
 
   upload:
-    build: ./srv_upload
+    build: src/srv_upload
     image: upload
     restart: always
     container_name: upload
@@ -36,7 +40,7 @@ services:
 
 
   gifgenerator:
-    build: ./srv_gifgenerator
+    build: src/srv_gifgenerator
     image: gifgenerator
     restart: always
     container_name: gifgenerator

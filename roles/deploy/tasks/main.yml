@@ -1,0 +1,4 @@
+---
+- name: Demo depoloy
+  debug:
+    msg: "Hello world"
