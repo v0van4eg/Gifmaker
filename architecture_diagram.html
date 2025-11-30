@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Схема архитектуры приложения "Генератор GIF"</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .diagram {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .section {
+            margin: 30px 0;
+        }
+        .description {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #4CAF50;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Схема архитектуры приложения "Генератор GIF"</h1>
+        
+        <div class="section">
+            <h2>Общая архитектура</h2>
+            <div class="diagram" id="architecture-diagram">
+                <div class="mermaid">
+graph TB
+    subgraph "Клиент" 
+        A[Браузер пользователя]
+    end
+    
+    subgraph "API Gateway (Nginx)"
+        B[Nginx API Gateway]
+    end
+    
+    subgraph "Микросервисы"
+        C[Web UI Flask]
+        D[Image Processing Flask]
+        E[GIF Generator Flask]
+    end
+    
+    subgraph "Общее хранилище"
+        F[Общая папка uploads]
+    end
+    
+    A -- "HTTP запросы" --> B
+    B -- "Маршрутизация запросов" --> C
+    B -- "Маршрутизация запросов" --> D
+    B -- "Маршрутизация запросов" --> E
+    C <--> F
+    D <--> F
+    E <--> F
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#fce4ec
+    style F fill:#f1f8e9
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Детализированная схема прохождения данных</h2>
+            <div class="diagram" id="dataflow-diagram">
+                <div class="mermaid">
+sequenceDiagram
+    participant U as Пользователь
+    participant B as Nginx API Gateway
+    participant C as Web UI
+    participant D as Image Processing
+    participant E as GIF Generator
+    participant F as Общая папка uploads
+    
+    U->>B: Загрузка изображений (POST /upload)
+    B->>D: Перенаправление запроса (POST /upload)
+    D->>F: Сохранение изображений с уникальными именами
+    D-->>B: Возврат имен сохраненных файлов
+    B-->>U: Возврат имен сохраненных файлов
+    
+    U->>B: Изменение порядка изображений (POST /reorder_images)
+    B->>D: Перенаправление запроса (POST /reorder_images)
+    D->>F: Переименование файлов для изменения порядка
+    D-->>B: Подтверждение успешного изменения
+    B-->>U: Подтверждение успешного изменения
+    
+    U->>B: Удаление изображения (POST /remove_image)
+    B->>D: Перенаправление запроса (POST /remove_image)
+    D->>F: Удаление файла
+    D-->>B: Подтверждение успешного удаления
+    B-->>U: Подтверждение успешного удаления
+    
+    U->>B: Генерация GIF (POST /generate_gif)
+    B->>E: Перенаправление запроса (POST /generate_gif)
+    E->>F: Чтение изображений в нужном порядке
+    E->>F: Создание GIF файла (animation.gif)
+    E-->>B: Возврат URL созданного GIF
+    B-->>U: Возврат URL созданного GIF
+    
+    U->>B: Загрузка GIF (GET /uploads/session_id/animation.gif)
+    B->>F: Чтение GIF файла
+    F-->>B: Возврат GIF файла
+    B-->>U: Возврат GIF файла для скачивания
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Архитектурные особенности</h2>
+            
+            <div class="description">
+                <h3>1. Микросервисная архитектура</h3>
+                <ul>
+                    <li><strong>Web UI</strong>: Обрабатывает интерфейс пользователя, управляет сессиями</li>
+                    <li><strong>Image Processing</strong>: Обрабатывает загрузку, удаление и переупорядочивание изображений</li>
+                    <li><strong>GIF Generator</strong>: Генерирует анимированные GIF из изображений</li>
+                    <li><strong>Nginx API Gateway</strong>: Централизованная точка входа, маршрутизация запросов</li>
+                </ul>
+            </div>
+            
+            <div class="description">
+                <h3>2. Управление сессиями</h3>
+                <ul>
+                    <li>Каждый пользователь получает уникальный <code>session_id</code></li>
+                    <li>Все файлы хранятся в отдельной подпапке, названной по <code>session_id</code></li>
+                    <li>При создании новой сессии старые файлы удаляются</li>
+                </ul>
+            </div>
+            
+            <div class="description">
+                <h3>3. Путь прохождения данных</h3>
+                
+                <h4>Загрузка изображения:</h4>
+                <ol>
+                    <li>Пользователь выбирает изображения в браузере</li>
+                    <li>Запрос отправляется на <code>/upload</code> через Nginx</li>
+                    <li>Nginx перенаправляет запрос в Image Processing сервис</li>
+                    <li>Изображения сохраняются в папку <code>/uploads/{session_id}/</code> с уникальными именами</li>
+                    <li>Возвращается список новых имен файлов</li>
+                </ol>
+                
+                <h4>Обработка изображений:</h4>
+                <ol>
+                    <li>Пользователь может изменить порядок изображений</li>
+                    <li>Запрос <code>/reorder_images</code> перенаправляется в Image Processing</li>
+                    <li>Файлы переименовываются с префиксами для сохранения порядка</li>
+                </ol>
+                
+                <h4>Генерация GIF:</h4>
+                <ol>
+                    <li>Пользователь нажимает "Создать GIF"</li>
+                    <li>Запрос <code>/generate_gif</code> перенаправляется в GIF Generator</li>
+                    <li>Сервис читает изображения в нужном порядке из папки сессии</li>
+                    <li>Создается анимированный GIF с заданными параметрами</li>
+                    <li>Файл сохраняется как <code>animation.gif</code> в той же папке</li>
+                </ol>
+                
+                <h4>Скачивание GIF:</h4>
+                <ol>
+                    <li>Пользователь нажимает "Скачать GIF"</li>
+                    <li>Запрос на получение файла <code>/uploads/{session_id}/animation.gif</code></li>
+                    <li>Nginx возвращает файл из общей папки</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
